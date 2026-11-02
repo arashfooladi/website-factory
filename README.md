@@ -1,5 +1,7 @@
 # Website Factory
 
+Latest checkpoint: [current stage report](docs/STAGE-REPORT.md). Part 7 remains in progress; full-site acceptance has not passed.
+
 Current development also includes [editable design modes and strict skill packs](docs/CUSTOMIZATION.md), including [heydamir/unslop](https://github.com/heydamir/unslop), a [versioned MainTheme update library](docs/THEME-UPDATES.md), and the [automatic WordPress prototype build API](docs/BUILD-AUTOMATION.md). See [actual progress and remaining acceptance work](docs/PROGRESS.md) before treating the whole-site pipeline as complete.
 
 A private server application for producing complete client websites from a reference URL and brief. WordPress with MainTheme is the first output profile. The client receives a finished website and uses standard WordPress/WooCommerce administration for products and orders.

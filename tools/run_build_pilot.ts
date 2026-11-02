@@ -7,6 +7,9 @@ import {chromium} from '@playwright/test';
 import {loadConfig} from '../src/config.js';
 import {IntakeInput} from '../src/intake-contracts.js';
 import {BuildInput} from '../src/build-contracts.js';
+import {parseArgs} from 'node:util';
+
+const {values:options}=parseArgs({options:{retry:{type:'boolean',default:false}}});
 
 const config=await loadConfig(),root=resolve('.runtime/controller/part-7-pilot');
 await mkdir(root,{recursive:true,mode:0o700});
@@ -63,10 +66,16 @@ if(!state.intakeId){
 let intake=await api('/v1/intakes/'+state.intakeId);
 while(['queued','running'].includes(intake.status)){await new Promise(done=>setTimeout(done,1000));intake=await api('/v1/intakes/'+state.intakeId);}
 if(intake.status!=='completed')throw new Error('pilot_intake_'+intake.status);
-if(!state.buildId){
+if(options.retry){
+  if(!state.buildId||!state.designId)throw new Error('pilot_retry_requires_saved_build_and_design');
+  const previous=await api('/v1/builds/'+state.buildId);
+  if(!['cancelled','needs_review'].includes(previous.status))throw new Error('pilot_retry_requires_terminal_failure');
+}
+if(!state.buildId||options.retry){
   const content=structuredClone(fixture.content);content.heroAssetId=state.assetIds[0];
   content.products.forEach((product:any,index:number)=>product.imageAssetId=state.assetIds[index]);
-  const build=await api('/v1/builds',{intakeId:state.intakeId,content,agentLimits:fixture.agentLimits,maxObservedTokens:2000000,maxRuntimeMs:3600000});
+  const build=await api('/v1/builds',{intakeId:state.intakeId,...(options.retry?{designId:state.designId}:{}),content,agentLimits:fixture.agentLimits,maxObservedTokens:2000000,maxRuntimeMs:3600000});
+  if(state.buildId)state.previousBuildIds=[...new Set([...(state.previousBuildIds??[]),state.buildId])];
   state.buildId=build.id;await save(state);
 }
 let previous='';

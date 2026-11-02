@@ -7,6 +7,7 @@ import { AgentWorkspace,ReadFileInput,EditFileInput,ListFilesInput,BatchEditInpu
 import { AgentBrowser } from './agent-browser.js';
 import {AgentReference,ReferenceInput} from './agent-reference.js';
 import {DesignRecord,DesignSubmission,DesignValidationError} from './design.js';
+import {observationSummary} from './observation-summary.js';
 
 const EvidenceInput=z.object({artifactId:z.uuid(),offset:z.number().int().min(0).default(0),length:z.number().int().min(1).max(16000).default(8000)}).strict();
 const text=(value:unknown):ToolResponse=>({success:true,contentItems:[{type:'inputText',text:JSON.stringify(value)}]});
@@ -20,7 +21,7 @@ export class AgentTools {
     this.definitions=[
       ...(workspace?[tool('factory_list','List files in this client child theme or read-only MainTheme parent.',ListFilesInput),
       tool('factory_read','Read a theme source text file. Paths start with child/ or parent/.',ReadFileInput)]:[]),
-      ...(browser?[tool('factory_browser','Inspect the preview and use controlled browser actions. Returns a screenshot, HTML/structure evidence IDs, and before/after states.',BrowserAction)]:[]),
+      ...(browser?[tool('factory_browser','Inspect the preview and use controlled browser actions. Returns a screenshot, HTML/structure evidence IDs, and before/after states. Summary text is abbreviated; use factory_evidence for complete HTML/layout excerpts when needed.',BrowserAction)]:[]),
       tool('factory_evidence','Read an excerpt from a recorded HTML or structure artifact belonging to this run.',EvidenceInput),
       ...(canEdit&&workspace?[tool('factory_edit','Replace a complete child theme text file. Read the existing file first; parent files cannot be changed.',EditFileInput)]:[]),
       ...(canEdit&&workspace&&canBatch?[tool('factory_edit_files','Write up to eight related complete child source files in one request, within 512 KiB total. Parent edits and duplicate paths are denied before writing. Writes are sequential; a partial failure reports which files were written.',BatchEditInput)]:[]),
@@ -30,7 +31,7 @@ export class AgentTools {
   }
   async initial(){
     const result=await this.browser!.act({action:'navigate',path:'/'});
-    const summary={...result.after.summary,elements:(result.after.summary.elements as unknown[]).slice(0,20)};
+    const summary=observationSummary(result.after.summary);
     return{observation:{...result.after,summary},image:await this.artifacts.image(result.after.screenshot.id)};
   }
   invoke(name:string,args:unknown):Promise<ToolResponse>{
@@ -60,7 +61,7 @@ export class AgentTools {
           }
           case'factory_browser':{
             const result=await this.browser!.act(args);await this.assertActive();
-            const summary={...result.after.summary,elements:(result.after.summary.elements as unknown[]).slice(0,20)};
+            const summary=observationSummary(result.after.summary);
             return{success:true,contentItems:[{type:'inputText',text:JSON.stringify({beforeStateId:result.before?.stateId??null,
               transitionId:result.transitionId,after:{...result.after,summary}})},
               {type:'inputImage',imageUrl:await this.artifacts.image(result.after.screenshot.id)}]};}

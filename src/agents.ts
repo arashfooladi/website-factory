@@ -224,7 +224,7 @@ export class Agents {
       design=row.role==='designer'&&reference?new DesignSubmission(reference,artifacts):undefined;
       tools=new AgentTools(workspace,browser,artifacts,row.role==='builder',row.limits.maxToolCalls,()=>this.valid(id,attempt),reference,design,row.skill_versions.selection!=='v1');
       await artifacts.save('agent_capabilities','application/json',JSON.stringify({role:row.role,tools:tools.definitions,limits:row.limits,
-        environmentId:row.environment_id,intakeId:row.intake_id,designId:row.input_design_id,designProfileId:row.design_profile_id,themeBundle:assignedTheme??null,browserTransport:'chromium-cdp-fetch-v1'}));
+        environmentId:row.environment_id,intakeId:row.intake_id,designId:row.input_design_id,designProfileId:row.design_profile_id,themeBundle:assignedTheme??null,browserTransport:'chromium-cdp-fetch-v1',browserSummaryVersion:'compact-v1'}));
       const initial=browser?await tools.initial():undefined;
       const referenceImage=await reference?.initial();
       if(initial)await this.event(id,attempt,'initial_observation',{observation:initial.observation});

@@ -6,6 +6,8 @@ The state sequence is `queued → designing → provisioning → preparing → b
 
 Build token totals cover that build's child-agent runs. A reused design's earlier usage remains in its original agent record; include those separate records when assessing total project usage. Failed requests with unknown usage remain unknown and cannot establish an accurate monetary total.
 
+For the saved local pilot, `node --import tsx tools/run_build_pilot.ts --retry` explicitly starts a new build from its completed design after a cancelled/review-needed attempt. It preserves prior build IDs, refuses an active or successful build, and grants a fresh bounded allocation. Running without `--retry` only watches the saved build.
+
 Create a build with `npm run controller:cli -- build:create --file build.json` or `POST /v1/builds`. A representative input is:
 
 ```json

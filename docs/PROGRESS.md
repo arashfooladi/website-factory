@@ -12,9 +12,11 @@ Completed: **Part 5 — project intake and reference capture**, verified with is
 
 Completed: **Part 6 — design and MainTheme skills**, verified with role-limited structured output, exact instruction hashes and a real Codex design/continuation.
 
-In progress: **Part 7 — build the website automatically**. The latest operator instruction requests a working checkpoint and new GitHub repository because Codex quota is low. Finish local checks and publish the checkpoint; do not start further provider-consuming pilots in this handoff. The earlier instruction to proceed through all numbered parts resumes only when this quota-limited handoff is reopened.
+In progress: **Part 7 — build the website automatically**. The operator requested another GitHub checkpoint because hourly Codex quota is at 5%. Stop further provider runs and preserve the current work. See [the current stage report](STAGE-REPORT.md) before resuming.
 
 Additional user requirements for the active work: import/replace MainTheme updates as immutable selectable bundles, pin each project to its version, and expose editable strict-copy/semi-copy/inspiration/custom design modes, per-page preferences and selectable strict anti-slop/design packs. The intended Unslop repo was clarified to **heydamir/unslop**; that actual UI skill is now the `unslop` option. The different mshumer calibration workflow is a separate optional `unslop-calibration` pack, disabled by default. Part 7 is not complete.
+
+Reopened Part 7: a fresh build reused the saved design and populated the real site. Its coding run stopped at the observed-token threshold (1,061,928 confirmed observed tokens); a fresh focused completion also stopped at its threshold (438,655 confirmed observed tokens). No candidate was published and neither run is labelled successful. A reviewed intermediate product screenshot had a missing artwork region; the retained source subsequently switched its product template to a full-attachment renderer, still awaiting successful verification. Browser summaries now abbreviate repeated container text while retaining full immutable screenshot/HTML/layout evidence and on-demand excerpts. The retry command refuses active builds. A subsequent trusted preflight failed during its WordPress runtime command with RuntimeError, before completing browser checks; its cause remains undiagnosed. No full-site verification pass is claimed.
 
 Implemented:
 
