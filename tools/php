@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+factory_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+factory_php="$factory_root/.runtime/native/usr/bin/php"
+if [[ -n "${FACTORY_PHP_BIN:-}" ]]; then
+    exec "$FACTORY_PHP_BIN" "$@"
+elif [[ -x "$factory_php" ]]; then
+    exec "$factory_php" -n -d "extension_dir=$factory_root/.runtime/native/usr/lib/php/modules" \
+        -d extension=mysqli -d extension=curl -d extension=zip \
+        -d memory_limit=512M -d display_errors=0 -d log_errors=1 "$@"
+elif command -v php >/dev/null 2>&1; then
+    exec php "$@"
+else
+    echo 'PHP missing. Run npm run fixture:prepare on Arch Linux, or use the Docker fixture.' >&2
+    exit 1
+fi

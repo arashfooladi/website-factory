@@ -1,0 +1,79 @@
+name: website-factory-baseline
+
+x-site-volumes: &site-volumes
+  - wordpress-data:/var/www/html
+  - ./baseline/source/maintheme:/var/www/html/wp-content/themes/maintheme:ro
+  - ./baseline/source/maintheme-child-starter:/var/www/html/wp-content/themes/maintheme-child-starter:ro
+  - ./baseline/source/maintheme-iran-commerce:/var/www/html/wp-content/plugins/maintheme-iran-commerce:ro
+  - ./.runtime/site/wp-content/plugins/woocommerce:/var/www/html/wp-content/plugins/woocommerce:ro
+  - ./.runtime/site/wp-content/languages:/var/www/html/wp-content/languages:ro
+  - ./fixtures/fixture-guard.php:/var/www/html/wp-content/mu-plugins/fixture-guard.php:ro
+  - ./fixtures:/factory/fixtures:ro
+  - ./.runtime/downloads/wp-cli.phar:/factory/wp-cli.phar:ro
+
+x-wordpress-environment: &wordpress-environment
+  WORDPRESS_DB_HOST: database:3306
+  WORDPRESS_DB_NAME: factory_baseline
+  WORDPRESS_DB_USER: factory
+  WORDPRESS_DB_PASSWORD: ${FACTORY_DB_PASSWORD:?Run fixture:prepare first}
+  WORDPRESS_DEBUG: "1"
+  WORDPRESS_CONFIG_EXTRA: |
+    define('WP_ENVIRONMENT_TYPE', 'local');
+    define('WP_DEBUG_LOG', true);
+    define('WP_DEBUG_DISPLAY', false);
+    define('DISABLE_WP_CRON', true);
+    define('AUTOMATIC_UPDATER_DISABLED', true);
+    define('WP_AUTO_UPDATE_CORE', false);
+    define('DISALLOW_FILE_EDIT', true);
+
+services:
+  database:
+    image: mariadb:11.8.5@sha256:345fa26d595e8c7fe298e0c4098ed400356f502458769c8902229b3437d6da2b
+    environment:
+      MARIADB_DATABASE: factory_baseline
+      MARIADB_USER: factory
+      MARIADB_PASSWORD: ${FACTORY_DB_PASSWORD:?Run fixture:prepare first}
+      MARIADB_ROOT_PASSWORD: ${FACTORY_DB_ROOT_PASSWORD:?Run fixture:prepare first}
+    volumes:
+      - database-data:/var/lib/mysql
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+    mem_limit: 768m
+    pids_limit: 256
+
+  wordpress:
+    image: wordpress:7.1.4-php8.4-apache@sha256:50c808d213d038ad68fdbb8d9ecb35f8181a8670928dc669c1c4595f23b8bcf8
+    ports:
+      - "127.0.0.1:8787:80"
+    environment: *wordpress-environment
+    volumes: *site-volumes
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, php, -r, "exit(@fsockopen('127.0.0.1',80)?0:1);"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+    mem_limit: 1g
+    pids_limit: 256
+
+  cli:
+    image: wordpress:cli-php8.4@sha256:807d746b7122d004c3d3768d77f221acedbd17b98ffe9646a9388627a36cdbc7
+    user: "33:33"
+    entrypoint: [php, /factory/wp-cli.phar, --path=/var/www/html]
+    environment: *wordpress-environment
+    volumes: *site-volumes
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    profiles: [tools]
+    mem_limit: 768m
+    pids_limit: 128
+
+volumes:
+  wordpress-data:
+  database-data:

@@ -1,0 +1,15 @@
+{
+  "version": "wordpress-acceptance-v1",
+  "cases": [
+    {"key":"wp-admin-access","profile":"wordpress","description":"The client's WordPress administrator can log in and use the dashboard.","method":"protected-browser"},
+    {"key":"navigation","profile":"wordpress","description":"Required navigation links lead to the intended working pages.","method":"protected-browser"},
+    {"key":"keyboard-access","profile":"wordpress","description":"Critical navigation and forms are usable with keyboard focus and labels.","method":"protected-browser"},
+    {"key":"responsive-layout","profile":"wordpress","description":"Required pages have no unintended horizontal overflow or inaccessible controls at required and stress viewports.","method":"geometry-and-visual"},
+    {"key":"no-placeholders","profile":"wordpress","description":"No unfinished sections, broken required images, dead controls or draft client content remain.","method":"source-and-browser"},
+    {"key":"restore-delivery","profile":"wordpress","description":"The exact export restores on a fresh hostname and passes its required checks.","method":"fresh-restore"},
+    {"key":"admin-products","profile":"commerce","description":"The client can create/edit simple and variable products, categories, images, prices and stock, and observe storefront updates.","method":"protected-browser"},
+    {"key":"product-cart-checkout","profile":"commerce","description":"A real product can enter the cart and complete a controlled test order using isolated integrations.","method":"protected-browser"},
+    {"key":"orders-stock","profile":"commerce","description":"The resulting order and stock persist and are manageable in WordPress administration.","method":"protected-browser"},
+    {"key":"commerce-edge-cases","profile":"commerce","description":"Unavailable products, configured shipping/gateway results and required address/phone cases behave correctly.","method":"protected-browser"}
+  ]
+}

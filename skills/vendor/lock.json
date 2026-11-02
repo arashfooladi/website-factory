@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "packages": {
+    "anthropic-frontend-design": {
+      "repository": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "execution": "Instructions only; Unslop calibration requires the controlled factory runner. No vendored script is executed on import.",
+      "files": {
+        "LICENSE.txt": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+        "SKILL.md": "d91970639e9f5c37682ac7ab60094d35f1c7c1f38d731bd56396563aee10c1d3"
+      }
+    },
+    "unslop": {
+      "repository": "https://github.com/mshumer/unslop",
+      "commit": "edcb62386d129c65e4395f0cfcc9168eb1ba2148",
+      "execution": "Instructions only; Unslop calibration requires the controlled factory runner. No vendored script is executed on import.",
+      "files": {
+        "LICENSE": "2584895bfae1871eb6dc9a02793b8b1a6d74e489537bc2ea12dfc89d308ab469",
+        "SKILL.md": "63926b6d8d41c7e39cc69cb2a804a7d2bd590d5abd75771b05d1c79bb0b8b420",
+        "unslop.py": "e85988d78dd9a1d2ddb1fa97cb1a449ed86472b05e5d6ae7b1a990340841e603"
+      },
+      "purpose": "Optional mshumer empirical calibration, not the UI skill selected by unslop."
+    },
+    "heydamir-unslop": {
+      "repository": "https://github.com/heydamir/unslop",
+      "commit": "a6f121eee5f29c2f74976b75456feae8b66afb3a",
+      "license": "CC-BY-4.0",
+      "author": "Damir Sokolovsky",
+      "execution": "Only instructions/references are loaded. Vendored snapshot/story scripts are not agent capabilities.",
+      "files": {
+        "CITATION.cff": "05a1d33a8c94660a6240afa2adf2e0331abeccf178bf00827b8ebd7a4796fb11",
+        "LICENSE": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+        "SKILL.md": "9e49b2ff7643fa09729e8665890a18f6bfa58a82e6fcbba330da38136ccdc393",
+        "agents/openai.yaml": "170d0b33a418d9d82beb7d15f8a91e314adef2edf53a81c37155b6f40dd52f06",
+        "references/effects.md": "ded4f679e22843a8f68860e6cda0396fa8b8fa27202400e08337143b485c86a4",
+        "references/refs/beacon-engraving.webp": "44e7680e9c944f03c8fe45df999bdf74077a106925a8189eebf89e751e306e5b",
+        "references/refs/meadow-3d.webp": "84f526b68021a06fc6d32f162406fab6cc8074da1ef76d2ae4530e1b58219b14",
+        "references/refs/story-dashboard-frames.webp": "cfbf837e40b7626d5a5789dbce54f5c197aab303aa350d13a042048310717137",
+        "references/refs/unslop-dashboard-after.webp": "48067794f86b43dab20515b3810f245d67bff05d10bfa83c0f5885bee93cea52",
+        "references/refs/unslop-hero-after.webp": "92b2d796c5b6116a2039f5ca2b0f3edf700c92b41846b11b9501a4e32f72af6e",
+        "references/refs.md": "12a70ce17d574914ea69eb0809e5a9605de044df1b66619159c6d0b38d6b8353",
+        "references/signs.md": "6250d3c222c2aaa4ef4f31557d99d249e5be86d8720cd1157df14798caf1c8c4",
+        "references/tokens.md": "988b754612b3e2d42d87b1bbaca0b4a61f3e07a2b2eef782d3614e8fdb6db5b0",
+        "references/visuals.md": "7247da579d2d95ace1e051b867c757bd1e05aa02f3ab8dea0ead4cd4bf14d7d7",
+        "scripts/snapshot.mjs": "0a5f2511d922bd5bd0df56e70e72d9e349695f2464f9b93d0bda3ef8a58c6e48",
+        "scripts/story.mjs": "17d3a6ab6564efc5aa7632a36f340c130aa512fde73d229d79474f1b4c09d0e1"
+      }
+    }
+  }
+}

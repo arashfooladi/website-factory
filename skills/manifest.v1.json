@@ -1,0 +1,17 @@
+{
+  "version": "factory-skillset-v1",
+  "baseInstructions": "agent-v2.md",
+  "browserObservationVersion": "2",
+  "provenance": {
+    "designStartingPoint": "Local Impeccable 4.8.0: SKILL.md and reference/new-work.md",
+    "adaptation": "Original concise factory instructions. The client's brief and requested unattended execution replace interactive interviews/option approval boards. Independent rendered QA remains a separate pipeline stage.",
+    "mainthemeContract": "Pinned MainTheme 0.4.0 child/developer documentation in baseline/source"
+  },
+  "roles": {
+    "analyst": ["v1/factory-reference/SKILL.md"],
+    "designer": ["v1/factory-reference/SKILL.md", "v1/factory-design/SKILL.md", "v1/factory-maintheme/SKILL.md"],
+    "builder": ["v1/factory-reference/SKILL.md", "v1/factory-design/SKILL.md", "v1/factory-maintheme/SKILL.md"],
+    "visual_reviewer": ["v1/factory-reference/SKILL.md", "v1/factory-design/SKILL.md"],
+    "functional_tester": ["v1/factory-reference/SKILL.md", "v1/factory-maintheme/SKILL.md"]
+  }
+}

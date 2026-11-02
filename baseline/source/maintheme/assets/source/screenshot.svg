@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">Maintheme preview</title>
+  <desc id="desc">A teal and cream Persian storefront layout preview.</desc>
+  <rect width="1200" height="900" fill="#fffdf9"/>
+  <rect width="1200" height="46" fill="#1b2421"/>
+  <rect x="72" y="84" width="1056" height="80" rx="16" fill="#fffdf9" stroke="#d9ded9"/>
+  <circle cx="120" cy="124" r="22" fill="#0e7565"/>
+  <rect x="166" y="112" width="160" height="24" rx="12" fill="#1b2421"/>
+  <rect x="760" y="108" width="180" height="32" rx="16" fill="#f5f1eb"/>
+  <circle cx="1010" cy="124" r="16" fill="#d8f0e8"/>
+  <circle cx="1062" cy="124" r="16" fill="#d8f0e8"/>
+  <rect x="72" y="212" width="1056" height="310" rx="26" fill="#d8f0e8"/>
+  <rect x="132" y="280" width="380" height="32" rx="16" fill="#1b2421"/>
+  <rect x="132" y="334" width="300" height="20" rx="10" fill="#65716c"/>
+  <rect x="132" y="374" width="160" height="50" rx="12" fill="#0e7565"/>
+  <circle cx="900" cy="366" r="126" fill="#f2b84b"/>
+  <rect x="72" y="582" width="250" height="236" rx="18" fill="#f5f1eb"/>
+  <rect x="350" y="582" width="250" height="236" rx="18" fill="#f5f1eb"/>
+  <rect x="628" y="582" width="250" height="236" rx="18" fill="#f5f1eb"/>
+  <rect x="906" y="582" width="222" height="236" rx="18" fill="#f5f1eb"/>
+</svg>
+

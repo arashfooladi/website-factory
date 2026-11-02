@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "baselineManifestSha256": "c9235ab715f69e4847991eb3afa2814fcf9ea093680eb82184fb224ab9ba7e83",
+  "runtimeLockSha256": "636d113be7ebc9e98cf82e8983089352436a7627aa87813b9ff2858d63777195",
+  "evidence": ["docs/PART-1-REPORT.md", "docs/PART-3-REPORT.md"],
+  "scope": "Previously tested canonical factory baseline and pinned native runtime. New bundle imports require independent compatibility certification. This is not certification of a generated client website."
+}

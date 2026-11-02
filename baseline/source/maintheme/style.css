@@ -1,0 +1,78 @@
+/*
+Theme Name: Maintheme
+Theme URI: https://example.com/maintheme
+Author: Maintheme Studio
+Author URI: https://example.com
+Description: A Persian-first, RTL block parent theme for Iranian WooCommerce stores and reusable child themes.
+Requires at least: 6.6
+Requires PHP: 7.4
+Version: 0.4.0
+License: GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: maintheme
+Tags: block-patterns, block-styles, e-commerce, full-site-editing, rtl-language-support, translation-ready, wide-blocks
+*/
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video {
+  height: auto;
+  max-width: 100%;
+}
+
+:where(a, button, input, select, summary, textarea):focus-visible {
+  outline: 3px solid var(--wp--preset--color--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--wp--preset--color--accent-soft);
+  color: var(--wp--preset--color--contrast);
+}
+
+.screen-reader-text:focus {
+  background: var(--wp--preset--color--base);
+  border-radius: var(--wp--custom--radius--small);
+  box-shadow: var(--wp--preset--shadow--elevated);
+  clip: auto !important;
+  clip-path: none;
+  color: var(--wp--preset--color--contrast);
+  display: block;
+  font-size: var(--wp--preset--font-size--small);
+  height: auto;
+  inset-block-start: var(--wp--preset--spacing--30);
+  inset-inline-start: var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--30);
+  position: fixed;
+  width: auto;
+  z-index: 100000;
+}
+
+:where(input, select, textarea) {
+  font: inherit;
+}
+
+:where(button, .wp-element-button, .wp-block-button__link) {
+  transition:
+    background-color var(--wp--custom--transition--standard),
+    border-color var(--wp--custom--transition--standard),
+    box-shadow var(--wp--custom--transition--standard),
+    color var(--wp--custom--transition--standard),
+    transform var(--wp--custom--transition--standard);
+}
+
+:where(button, .wp-element-button, .wp-block-button__link):active {
+  transform: translateY(1px);
+}

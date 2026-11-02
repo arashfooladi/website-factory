@@ -1,0 +1,13 @@
+{
+  "native": {
+    "version": "18.6",
+    "filename": "postgresql-18.6-4-x86_64.pkg.tar.zst",
+    "url": "https://geo.mirror.pkgbuild.com/extra/os/x86_64/postgresql-18.6-4-x86_64.pkg.tar.zst",
+    "sha256": "005afa838b458df780a9df689d10674decb6e03aa8005af7b703299a50d17f8e"
+  },
+  "numactl": {
+    "filename": "numactl-2.0.19-1-x86_64.pkg.tar.zst",
+    "url": "https://geo.mirror.pkgbuild.com/extra/os/x86_64/numactl-2.0.19-1-x86_64.pkg.tar.zst",
+    "sha256": "699bce74daee11fa49de93999ba4e023f132bc51a7768dec845b2979d54f367d"
+  }
+}

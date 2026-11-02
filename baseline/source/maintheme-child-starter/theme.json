@@ -1,0 +1,70 @@
+{
+  "$schema": "https://schemas.wp.org/wp/6.6/theme.json",
+  "version": 3,
+  "settings": {
+    "color": {
+      "palette": [
+        {
+          "slug": "base",
+          "color": "#fefcff",
+          "name": "پس‌زمینه"
+        },
+        {
+          "slug": "surface",
+          "color": "#f6f0fb",
+          "name": "سطح روشن"
+        },
+        {
+          "slug": "contrast",
+          "color": "#24172d",
+          "name": "متن اصلی"
+        },
+        {
+          "slug": "muted",
+          "color": "#75647d",
+          "name": "متن کم‌رنگ"
+        },
+        {
+          "slug": "accent",
+          "color": "#7c3fb2",
+          "name": "رنگ اصلی"
+        },
+        {
+          "slug": "accent-strong",
+          "color": "#57267f",
+          "name": "رنگ اصلی تیره"
+        },
+        {
+          "slug": "accent-soft",
+          "color": "#eadcf5",
+          "name": "رنگ اصلی روشن"
+        },
+        {
+          "slug": "highlight",
+          "color": "#e7ad45",
+          "name": "تأکید"
+        },
+        {
+          "slug": "danger",
+          "color": "#b83a3a",
+          "name": "خطا"
+        },
+        {
+          "slug": "success",
+          "color": "#247a49",
+          "name": "موفقیت"
+        },
+        {
+          "slug": "warning",
+          "color": "#9a6414",
+          "name": "هشدار"
+        },
+        {
+          "slug": "border",
+          "color": "#dfd4e7",
+          "name": "حاشیه"
+        }
+      ]
+    }
+  }
+}

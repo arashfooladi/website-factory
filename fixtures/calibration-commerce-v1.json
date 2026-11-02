@@ -1,0 +1,12 @@
+{
+  "domain": "WordPress small-business commerce",
+  "prompts": [
+    "Design a fictional demo shop named Reed & Weft selling linen: hand towel $18, table cloth $64, cushion cover $28. English, LTR. Include navigation, product names/prices, a useful product list and a short factual materials note. Everything is illustrative; no testimonials, discount, urgency, sustainability claim or invented credentials.",
+    "Design a fictional demo shop named Spoke Bench selling bicycle parts: chain $26, brake pads $15, inner tube $9. English, LTR. Include clear navigation, useful compatibility hints labelled illustrative, actual prices and a simple catalog. Everything is a demo; no fabricated reviews, discounts or business claims.",
+    "طراحی یک فروشگاه نمایشی فارسی و راست‌به‌چپ با نام کاغذک برای لوازم‌تحریر: دفتر ۱۸۰۰۰۰ تومان، مداد ۲۵۰۰۰ تومان، پوشه ۶۰۰۰۰ تومان. راهبری واضح، فهرست کاربردی محصولات و قیمت‌ها داشته باشد. اطلاعات کاملاً نمایشی است؛ نظر مشتری، تخفیف، تعداد مشتری و ادعای تجاری اختراع نکن.",
+    "طراحی یک فروشگاه نمایشی فارسی و راست‌به‌چپ با نام خاک‌نو برای ظروف سفالی: لیوان ۳۲۰۰۰۰ تومان، کاسه ۴۵۰۰۰۰ تومان، بشقاب ۵۸۰۰۰۰ تومان. نام، قیمت، راهبری و توضیح ساده جنس محصول را نشان بده. تصاویر واقعی موجود نیست. هیچ گواهی، نظر مشتری، تخفیف یا ادعای تجاری نساز."
+  ],
+  "comparisonPrompt": "Create a fictional demo shop named Task Light selling desk lamps: compact lamp $46, adjustable lamp $82, clip lamp $32. English, LTR. Include clear product discovery, prices and a short factual product list. Use only these supplied facts; no business claims, testimonials, promotion or pretend product photography. This is a design experiment.",
+  "maxObservedTokens": 500000,
+  "maxRuntimeMs": 1800000
+}

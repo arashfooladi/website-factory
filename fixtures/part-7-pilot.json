@@ -1,0 +1,55 @@
+{
+  "projectName": "Part 7 pilot — Satr demonstration print shop",
+  "brief": {
+    "mode": "custom",
+    "businessName": "سطر",
+    "language": "fa-IR",
+    "direction": "rtl",
+    "prompt": "Build a complete Persian RTL demonstration shop for Satr (سطر), selling the two supplied original typographic prints. This is a synthetic local pilot, not a real business. Use the actual artwork as merchandise, not invented photography or decorative filler. Make the first viewport useful: a compact identity, clear catalog access, real product names/prices and visible artwork. Give the site the character of a small print studio through careful typography and composition. Avoid a huge generic hero, marketing claims, testimonials, badges, icon-card sections or extra products. Preserve normal WooCommerce product management, variations, cart, checkout and accounts. Use the supplied About and Order Guide copy. Clearly label the demo and test checkout in Persian. No contact form or external services are requested.",
+    "features": ["commerce", "search", "accounts"],
+    "pages": [
+      {"path": "/", "label": "خانه"},
+      {"path": "/shop/", "label": "چاپ‌ها"},
+      {"path": "/cart/", "label": "سبد خرید"},
+      {"path": "/checkout/", "label": "تکمیل سفارش آزمایشی"},
+      {"path": "/account/", "label": "حساب کاربری"},
+      {"path": "/about/", "label": "درباره سطر"},
+      {"path": "/order-guide/", "label": "راهنمای سفارش"},
+      {"path": "/product/aghaz/", "label": "چاپ آغاز"},
+      {"path": "/product/aram/", "label": "چاپ آرام"}
+    ],
+    "design": {
+      "quality": "strict",
+      "skillPacks": ["factory-design", "impeccable", "frontend-design", "unslop"],
+      "domain": "Persian typographic art print shop",
+      "fonts": ["Vazirmatn"],
+      "palette": {"surface": "#f4f1e9", "text": "#24231e", "accent": "#9e3d25", "on-accent": "#ffffff"},
+      "density": "balanced",
+      "motion": "none",
+      "mustKeep": ["The original supplied artwork and Persian product names", "Real WooCommerce data and standard client administration", "Visible synthetic-demo disclosure"],
+      "mustAvoid": ["Generic centered marketing hero", "Invented claims or customer reviews", "Fake products, prices or static cart controls", "Sample factory contact details"],
+      "instructions": "Use the pinned MainTheme bundle's licensed Vazirmatn font. Show complete poster artwork without cropping text. Let the products carry the visual identity. Keep commerce controls familiar and legible. Mobile navigation, search and product selection must work with touch and keyboard. Preserve a readable layout at 320px and short landscape sizes. Follow the supplied brief autonomously."
+    },
+    "budget": {"maxObservedTokens": 2000000, "maxRuntimeMs": 3600000, "maxRepairRounds": 0}
+  },
+  "content": {
+    "siteTitle": "سطر — چاپ‌های تایپوگرافیک",
+    "description": "فروشگاه نمایشی چاپ‌های تایپوگرافیک فارسی",
+    "synthetic": true,
+    "currency": "IRR",
+    "pages": [
+      {"path": "/", "title": "خانه", "kind": "home", "content": "<p>سطر، مجموعه‌ای نمایشی از دو چاپ تایپوگرافیک فارسی است. طرح‌ها را ببینید و مسیر سفارش آزمایشی را امتحان کنید.</p>"},
+      {"path": "/shop/", "title": "چاپ‌ها", "kind": "shop"},
+      {"path": "/cart/", "title": "سبد خرید", "kind": "cart"},
+      {"path": "/checkout/", "title": "تکمیل سفارش آزمایشی", "kind": "checkout"},
+      {"path": "/account/", "title": "حساب کاربری", "kind": "account"},
+      {"path": "/about/", "title": "درباره سطر", "kind": "content", "content": "<p>سطر یک فروشگاه نمایشی برای بررسی طراحی و مسیر خرید فارسی است. دو طرح «آغاز» و «آرام» برای همین نمونه با حروف فارسی و فرم‌های ساده ساخته شده‌اند.</p><p>این نمونه متعلق به یک کسب‌وکار واقعی نیست. محصول، موجودی و قیمت‌ها صرفاً برای آزمون سایت ثبت شده‌اند و سفارشی ارسال نمی‌شود.</p>"},
+      {"path": "/order-guide/", "title": "راهنمای سفارش", "kind": "content", "content": "<p>در صفحه هر چاپ، تصویر کامل و قیمت آزمایشی آن را ببینید. برای چاپ «آرام»، اندازه A4 یا A3 را انتخاب کنید و سپس محصول را به سبد اضافه کنید.</p><p>در سبد می‌توانید تعداد را تغییر دهید یا محصول را حذف کنید. صفحه تکمیل سفارش فقط از روش پرداخت نمایشی و ارسال آزمایشی استفاده می‌کند؛ پرداخت واقعی یا ارسال کالا انجام نمی‌شود.</p><p>اطلاعات شخصی واقعی وارد نکنید. این راهنما برای همین محیط آزمایشی است.</p>"}
+    ],
+    "products": [
+      {"key": "aghaz", "name": "چاپ آغاز", "summary": "تایپوگرافی فارسی با حروف آجری روی زمینه روشن، اندازه نمایشی A4", "description": "<p>طرح آغاز با یک واژه فارسی و ترکیب‌بندی حروف آجری ساخته شده است. تصویر، خود اثر را نشان می‌دهد و قاب یا محصول دیگری جزو آن نیست.</p><p>این محصول و قیمت آن صرفاً برای آزمون فروشگاه است؛ چاپ یا ارسال واقعی انجام نمی‌شود.</p>", "price": "650000", "stock": 12},
+      {"key": "aram", "name": "چاپ آرام", "summary": "تایپوگرافی فارسی به رنگ جوهری، در دو اندازه نمایشی A4 و A3", "description": "<p>طرح آرام از حروف فارسی و خطوط ساده با رنگ جوهری تشکیل شده است. پیش از افزودن به سبد، اندازه A4 یا A3 را انتخاب کنید. در این نمونه، هر دو اندازه قیمت آزمایشی یکسان دارند.</p><p>این محصول و موجودی آن صرفاً برای آزمون مسیر خرید است؛ سفارش واقعی پذیرفته نمی‌شود.</p>", "price": "1800000", "stock": 8, "variations": {"attribute": "اندازه", "options": ["A4", "A3"]}}
+    ]
+  },
+  "agentLimits": {"maxRuntimeMs": 600000, "maxObservedTokens": 1000000, "maxToolCalls": 60, "maxArtifactBytes": 67108864}
+}

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /runtime/bin/php -n -d extension_dir=/runtime/lib/php/modules -d extension=mysqli -d extension=curl -d extension=zip -d memory_limit=256M -d display_errors=0 -d log_errors=1 -d error_log=/logs/php-errors.log "$@"

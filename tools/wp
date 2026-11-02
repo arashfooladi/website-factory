@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+factory_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ "${FACTORY_RUNTIME:-native}" == docker ]]; then
+    exec docker compose --env-file "$factory_root/.runtime/docker.env" -f "$factory_root/compose.yaml" --project-directory "$factory_root" \
+        run --rm -T --env FACTORY_ADMIN_USER --env FACTORY_ADMIN_PASSWORD cli "$@"
+fi
+exec "$factory_root/tools/php" "$factory_root/.runtime/downloads/wp-cli.phar" \
+    "--path=$factory_root/.runtime/site" "$@"

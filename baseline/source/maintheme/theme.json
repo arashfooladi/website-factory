@@ -1,0 +1,401 @@
+{
+  "$schema": "https://schemas.wp.org/wp/6.6/theme.json",
+  "version": 3,
+  "customTemplates": [
+    {
+      "name": "page-full-width",
+      "title": "برگه تمام‌عرض",
+      "postTypes": [
+        "page"
+      ]
+    },
+    {
+      "name": "page-landing",
+      "title": "صفحه فرود بدون سربرگ",
+      "postTypes": [
+        "page"
+      ]
+    },
+    {
+      "name": "page-coming-soon",
+      "title": "صفحه به‌زودی",
+      "postTypes": [
+        "page"
+      ]
+    }
+  ],
+  "templateParts": [
+    {
+      "name": "header",
+      "title": "سربرگ فروشگاه",
+      "area": "header"
+    },
+    {
+      "name": "checkout-header",
+      "title": "سربرگ تسویه‌حساب",
+      "area": "header"
+    },
+    {
+      "name": "checkout-footer",
+      "title": "پابرگ تسویه‌حساب",
+      "area": "footer"
+    },
+    {
+      "name": "footer",
+      "title": "پابرگ فروشگاه",
+      "area": "footer"
+    }
+  ],
+  "settings": {
+    "appearanceTools": true,
+    "useRootPaddingAwareAlignments": true,
+    "layout": {
+      "contentSize": "760px",
+      "wideSize": "1280px"
+    },
+    "color": {
+      "defaultPalette": false,
+      "defaultGradients": false,
+      "custom": true,
+      "customGradient": true,
+      "palette": [
+        {
+          "slug": "base",
+          "color": "#fffdf9",
+          "name": "پس‌زمینه"
+        },
+        {
+          "slug": "surface",
+          "color": "#f5f1eb",
+          "name": "سطح روشن"
+        },
+        {
+          "slug": "contrast",
+          "color": "#1b2421",
+          "name": "متن اصلی"
+        },
+        {
+          "slug": "muted",
+          "color": "#65716c",
+          "name": "متن کم‌رنگ"
+        },
+        {
+          "slug": "accent",
+          "color": "#0e7565",
+          "name": "رنگ اصلی"
+        },
+        {
+          "slug": "accent-strong",
+          "color": "#095448",
+          "name": "رنگ اصلی تیره"
+        },
+        {
+          "slug": "accent-soft",
+          "color": "#d8f0e8",
+          "name": "رنگ اصلی روشن"
+        },
+        {
+          "slug": "highlight",
+          "color": "#f2b84b",
+          "name": "تأکید"
+        },
+        {
+          "slug": "danger",
+          "color": "#b83a3a",
+          "name": "خطا"
+        },
+        {
+          "slug": "success",
+          "color": "#247a49",
+          "name": "موفقیت"
+        },
+        {
+          "slug": "warning",
+          "color": "#9a6414",
+          "name": "هشدار"
+        },
+        {
+          "slug": "border",
+          "color": "#d9ded9",
+          "name": "حاشیه"
+        }
+      ],
+      "duotone": [],
+      "gradients": [
+        {
+          "slug": "accent-wash",
+          "gradient": "linear-gradient(135deg, var(--wp--preset--color--accent-soft) 0%, var(--wp--preset--color--base) 100%)",
+          "name": "شست‌وشوی رنگی"
+        }
+      ]
+    },
+    "border": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true
+    },
+    "dimensions": {
+      "minHeight": true
+    },
+    "spacing": {
+      "blockGap": true,
+      "margin": true,
+      "padding": true,
+      "units": [
+        "px",
+        "rem",
+        "%",
+        "vw",
+        "vh"
+      ],
+      "spacingSizes": [
+        {
+          "slug": "10",
+          "size": "0.25rem",
+          "name": "خیلی ریز"
+        },
+        {
+          "slug": "20",
+          "size": "0.5rem",
+          "name": "ریز"
+        },
+        {
+          "slug": "30",
+          "size": "0.75rem",
+          "name": "کوچک"
+        },
+        {
+          "slug": "40",
+          "size": "1rem",
+          "name": "متوسط"
+        },
+        {
+          "slug": "50",
+          "size": "1.5rem",
+          "name": "متوسط بزرگ"
+        },
+        {
+          "slug": "60",
+          "size": "2rem",
+          "name": "بزرگ"
+        },
+        {
+          "slug": "70",
+          "size": "3rem",
+          "name": "خیلی بزرگ"
+        },
+        {
+          "slug": "80",
+          "size": "clamp(3.5rem, 8vw, 7rem)",
+          "name": "نمایشی"
+        }
+      ]
+    },
+    "typography": {
+      "dropCap": false,
+      "fontFamilies": [
+        {
+          "fontFamily": "Vazirmatn, Tahoma, sans-serif",
+          "slug": "body",
+          "name": "وزیرمتن",
+          "fontFace": [
+            {
+              "fontFamily": "Vazirmatn",
+              "fontStyle": "normal",
+              "fontWeight": "100 900",
+              "src": [
+                "file:./assets/fonts/vazirmatn.woff2"
+              ]
+            }
+          ]
+        },
+        {
+          "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+          "slug": "mono",
+          "name": "تک‌فاصله"
+        }
+      ],
+      "fontSizes": [
+        {
+          "slug": "x-small",
+          "size": "0.8125rem",
+          "name": "خیلی کوچک"
+        },
+        {
+          "slug": "small",
+          "size": "0.9375rem",
+          "name": "کوچک"
+        },
+        {
+          "slug": "medium",
+          "size": "1.0625rem",
+          "name": "متوسط"
+        },
+        {
+          "slug": "large",
+          "size": "clamp(1.5rem, 3vw, 2.25rem)",
+          "name": "بزرگ"
+        },
+        {
+          "slug": "x-large",
+          "size": "clamp(2.25rem, 5vw, 4.5rem)",
+          "name": "خیلی بزرگ"
+        }
+      ],
+      "fluid": true
+    },
+    "shadow": {
+      "presets": [
+        {
+          "name": "ظریف",
+          "slug": "subtle",
+          "shadow": "0 1px 2px rgba(27,36,33,.06), 0 4px 16px rgba(27,36,33,.05)"
+        },
+        {
+          "name": "متوسط",
+          "slug": "medium",
+          "shadow": "0 8px 24px rgba(27,36,33,.10)"
+        },
+        {
+          "name": "برجسته",
+          "slug": "elevated",
+          "shadow": "0 16px 44px rgba(27,36,33,.15)"
+        }
+      ]
+    },
+    "custom": {
+      "layout": {
+        "content": "760px",
+        "wide": "1280px",
+        "store": "1320px",
+        "checkout": "1180px"
+      },
+      "radius": {
+        "small": "0.5rem",
+        "medium": "0.875rem",
+        "large": "1.5rem",
+        "pill": "999px"
+      },
+      "control": {
+        "height": "3rem"
+      },
+      "product": {
+        "imageRatio": "1 / 1",
+        "cardGap": "1rem"
+      },
+      "transition": {
+        "standard": "180ms ease"
+      },
+      "zIndex": {
+        "header": "20",
+        "overlay": "30",
+        "modal": "40"
+      }
+    }
+  },
+  "styles": {
+    "color": {
+      "background": "var:preset|color|base",
+      "text": "var:preset|color|contrast"
+    },
+    "spacing": {
+      "blockGap": "var:preset|spacing|40",
+      "padding": {
+        "left": "var:preset|spacing|30",
+        "right": "var:preset|spacing|30"
+      }
+    },
+    "typography": {
+      "fontFamily": "var:preset|font-family|body",
+      "fontSize": "var:preset|font-size|medium",
+      "fontWeight": "400",
+      "lineHeight": "1.75"
+    },
+    "elements": {
+      "heading": {
+        "color": {
+          "text": "var:preset|color|contrast"
+        },
+        "typography": {
+          "fontWeight": "750",
+          "lineHeight": "1.35"
+        }
+      },
+      "link": {
+        "color": {
+          "text": "var:preset|color|accent"
+        },
+        "typography": {
+          "textDecoration": "none"
+        }
+      },
+      "button": {
+        "border": {
+          "radius": "var:custom|radius|small"
+        },
+        "color": {
+          "background": "var:preset|color|accent",
+          "text": "var:preset|color|base"
+        },
+        "spacing": {
+          "padding": {
+            "bottom": "0.75rem",
+            "left": "1.25rem",
+            "right": "1.25rem",
+            "top": "0.75rem"
+          }
+        },
+        "typography": {
+          "fontWeight": "700",
+          "lineHeight": "1.35"
+        }
+      },
+      "caption": {
+        "color": {
+          "text": "var:preset|color|muted"
+        }
+      }
+    },
+    "blocks": {
+      "core/button": {
+        "border": {
+          "radius": "var:custom|radius|small"
+        },
+        "typography": {
+          "fontWeight": "700"
+        }
+      },
+      "core/navigation": {
+        "typography": {
+          "fontWeight": "600"
+        }
+      },
+      "core/search": {
+        "border": {
+          "radius": "var:custom|radius|pill"
+        }
+      },
+      "core/query-pagination": {
+        "typography": {
+          "fontWeight": "600"
+        }
+      },
+      "woocommerce/product-price": {
+        "typography": {
+          "fontWeight": "750"
+        }
+      },
+      "woocommerce/product-button": {
+        "border": {
+          "radius": "var:custom|radius|small"
+        }
+      },
+      "woocommerce/product-collection": {
+        "spacing": {
+          "blockGap": "var:preset|spacing|50"
+        }
+      }
+    }
+  }
+}

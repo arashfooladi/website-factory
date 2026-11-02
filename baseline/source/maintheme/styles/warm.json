@@ -1,0 +1,78 @@
+{
+  "$schema": "https://schemas.wp.org/wp/6.6/theme.json",
+  "version": 3,
+  "title": "گرم",
+  "settings": {
+    "color": {
+      "palette": [
+        {
+          "slug": "base",
+          "color": "#fffaf5",
+          "name": "base"
+        },
+        {
+          "slug": "surface",
+          "color": "#f7eee5",
+          "name": "surface"
+        },
+        {
+          "slug": "contrast",
+          "color": "#2d211a",
+          "name": "contrast"
+        },
+        {
+          "slug": "muted",
+          "color": "#76665c",
+          "name": "muted"
+        },
+        {
+          "slug": "accent",
+          "color": "#a54f2d",
+          "name": "accent"
+        },
+        {
+          "slug": "accent-strong",
+          "color": "#75341e",
+          "name": "accent-strong"
+        },
+        {
+          "slug": "accent-soft",
+          "color": "#f5ddd1",
+          "name": "accent-soft"
+        },
+        {
+          "slug": "highlight",
+          "color": "#e9a53a",
+          "name": "highlight"
+        },
+        {
+          "slug": "danger",
+          "color": "#b83a3a",
+          "name": "danger"
+        },
+        {
+          "slug": "success",
+          "color": "#247a49",
+          "name": "success"
+        },
+        {
+          "slug": "warning",
+          "color": "#9a6414",
+          "name": "warning"
+        },
+        {
+          "slug": "border",
+          "color": "#e6d7cb",
+          "name": "border"
+        }
+      ],
+      "gradients": [
+        {
+          "slug": "accent-wash",
+          "gradient": "linear-gradient(135deg, var(--wp--preset--color--accent-soft) 0%, var(--wp--preset--color--base) 100%)",
+          "name": "شست‌وشوی رنگی"
+        }
+      ]
+    }
+  }
+}

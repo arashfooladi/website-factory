@@ -1,0 +1,5 @@
+/* Editor parity: the same component and WooCommerce files are also loaded. */
+.editor-styles-wrapper { direction: rtl; }
+.editor-styles-wrapper .maintheme-product-card,
+.editor-styles-wrapper .is-style-maintheme-interactive-card { transition: none; }
+.editor-styles-wrapper [data-type="core/template-part"] { max-width: none; }

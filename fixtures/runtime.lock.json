@@ -1,0 +1,49 @@
+{
+  "wordpress": "7.1.4",
+  "woocommerce": "11.2.1",
+  "php": "8.4.14",
+  "native_mariadb": "13.0.2",
+  "wp_cli": "2.12.0",
+  "downloads": {
+    "wordpress": {
+      "url": "https://downloads.wordpress.org/release/wordpress-7.1.4.zip",
+      "filename": "wordpress-7.1.4.zip",
+      "sha256": "a147146c159362778ecbbbfb07bb20ddf4e85b130f971c824e656a8f938c5f87"
+    },
+    "woocommerce": {
+      "url": "https://downloads.wordpress.org/plugin/woocommerce.11.2.1.zip",
+      "filename": "woocommerce-11.2.1.zip",
+      "sha256": "5317434cb381b5fdc7c1dd6ee258324f08c390976aaf8d1199f2a0e9a3ab8586"
+    },
+    "wp-cli": {
+      "url": "https://github.com/wp-cli/wp-cli/releases/download/v2.12.0/wp-cli-2.12.0.phar",
+      "filename": "wp-cli.phar",
+      "sha256": "ce34ddd838f7351d6759068d09793f26755463b4a4610a5a5c0a97b68220d85c"
+    },
+    "translation": {
+      "url": "https://downloads.wordpress.org/translation/core/7.1.4/fa_IR.zip",
+      "filename": "fa_IR-7.1.4.zip",
+      "sha256": "41272f95856fa0583120270b9d96ec06be92c09f2f5c8ae5306fd7cec548e92d"
+    },
+    "native-php": {
+      "url": "https://archive.archlinux.org/packages/p/php/php-8.4.14-1-x86_64.pkg.tar.zst",
+      "filename": "php-8.4.14-1-x86_64.pkg.tar.zst",
+      "sha256": "f3a1df5d2a789dc3999c1b893e5c7f4ce3bc09a89f515abafd2dba48d6d047e5"
+    },
+    "native-mariadb": {
+      "url": "https://geo.mirror.pkgbuild.com/extra/os/x86_64/mariadb-13.0.2-2-x86_64.pkg.tar.zst",
+      "filename": "mariadb-13.0.2-2-x86_64.pkg.tar.zst",
+      "sha256": "a5842f2e2897294ba0695f82f5bbc5b1dfb6d41f8ce78dee1e3deee9fd08053c"
+    },
+    "native-mariadb-clients": {
+      "url": "https://geo.mirror.pkgbuild.com/extra/os/x86_64/mariadb-clients-13.0.2-2-x86_64.pkg.tar.zst",
+      "filename": "mariadb-clients-13.0.2-2-x86_64.pkg.tar.zst",
+      "sha256": "1cb54ec32b163c2102bf4293883a38cfc31ec55108454fe14c1a67dddc0ae14a"
+    },
+    "woocommerce-translation": {
+      "url": "https://downloads.wordpress.org/translation/plugin/woocommerce/11.2.1/fa_IR.zip",
+      "filename": "woocommerce-fa_IR-11.2.1.zip",
+      "sha256": "3c5c2d3349835437b0510a4f24e57c1a5723623044fe1904f84e5ffd1ae7dc4a"
+    }
+  }
+}

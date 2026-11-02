@@ -1,0 +1,11 @@
+.maintheme-admin-wrap { max-width: 1180px; }
+.maintheme-admin-lead { font-size: 1rem; max-width: 75ch; }
+.maintheme-admin-grid { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-block: 1rem; }
+.maintheme-admin-card { background: #fff; border: 1px solid #dcdcde; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.04); padding: 1.25rem; }
+.maintheme-admin-card h2:first-child { margin-top: 0; }
+.maintheme-admin-links,
+.maintheme-status-list { display: grid; gap: .65rem; margin: 0; padding-inline-start: 1.25rem; }
+.maintheme-admin-settings { margin-block-start: 1rem; }
+.maintheme-admin-settings > h2 { border-block-start: 1px solid #dcdcde; margin-block-start: 2rem; padding-block-start: 1.5rem; }
+.maintheme-admin-settings > h2:first-of-type { border-block-start: 0; margin-block-start: 0; padding-block-start: 0; }
+@media (max-width: 1000px) { .maintheme-admin-grid { grid-template-columns: 1fr; } }
