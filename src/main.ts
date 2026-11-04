@@ -8,6 +8,8 @@ import { Intakes } from './intakes.js';
 import {Themes} from './themes.js';
 import {DesignProfiles} from './design-profiles.js';
 import {Builds} from './builds.js';
+import {FunctionalReviewJobs} from './functional-jobs.js';
+import {functionalProcessor} from './functional-processor.js';
 import {VisualReviewJobs} from './visual-jobs.js';
 import {visualProcessor} from './visual-processor.js';
 import {CodexAdapter} from './codex-adapter.js';
@@ -24,7 +26,8 @@ async function main() {
   const intakes=mode==='serve'?await new Intakes(controller).open():null;
   const builds=environments&&agents?await new Builds(controller,environments,agents).open():null;
   const visual=environments?await new VisualReviewJobs(controller,visualProcessor(controller,environments,new CodexAdapter(controller.config))).open():null;
-  const server = mode === 'serve' ? createApi(controller, environments!,agents!,intakes!,themes!,profiles!,builds!,visual!) : null;
+  const functional=environments?await new FunctionalReviewJobs(controller,functionalProcessor(controller,environments)).open():null;
+  const server = mode === 'serve' ? createApi(controller, environments!,agents!,intakes!,themes!,profiles!,builds!,visual!,functional!) : null;
   const worker = mode === 'worker' ? await startWorker(controller) : null;
   if (server) await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
@@ -38,6 +41,7 @@ async function main() {
     stopping = true;
     if (server) await new Promise<void>(resolve => { server.close(() => resolve()); server.closeIdleConnections(); });
     if(intakes)await intakes.close();
+    if(functional)await functional.close();
     if(visual)await visual.close();
     if(builds)await builds.close();
     if(themes)await themes.close();

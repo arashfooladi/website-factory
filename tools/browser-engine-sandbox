@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+"""Run a pinned Playwright Firefox/WebKit with only a scoped Unix HTTP bridge."""
+import os
+import sys
+import uuid
+from pathlib import Path
+scope='factory_browser_'+uuid.UUID(os.environ['FACTORY_BROWSER_RUN']).hex
+binary=Path(os.environ['FACTORY_ENGINE_BINARY']).resolve(strict=True)
+socket=Path(os.environ['FACTORY_ENGINE_SOCKET']).resolve(strict=True)
+if not socket.is_socket() or binary.name not in ('firefox','pw_run.sh'): raise ValueError('browser_engine_capability_invalid')
+os.dup2(3,0);os.dup2(4,1)
+bridge=Path(__file__).resolve().parents[1]/'sandbox/browser-http-bridge.py'
+profile_args=[]
+if binary.name=='firefox':
+    index=sys.argv.index('-profile')
+    profile=Path(sys.argv[index+1]).resolve(strict=True)
+    if profile.parent!=Path('/tmp') or not profile.name.startswith('playwright_firefoxdev_profile-') or profile.stat().st_uid!=os.getuid(): raise ValueError('browser_profile_invalid')
+    profile_args=['--bind',str(profile),str(profile)]
+command=['systemd-run','--user','--quiet','--scope','--unit',scope,
+ '-p','MemoryMax=1536M','-p','MemorySwapMax=0','-p','TasksMax=256','-p','CPUQuota=200%','-p','RuntimeMaxSec=650',
+ 'bwrap','--unshare-all','--unshare-user','--disable-userns','--assert-userns-disabled','--new-session','--die-with-parent','--cap-drop','ALL',
+ '--ro-bind','/usr','/usr','--symlink','usr/bin','/bin','--symlink','usr/lib','/lib','--symlink','usr/lib','/lib64',
+ '--ro-bind',str(binary.parent),'/browser','--ro-bind',str(bridge),'/bridge.py',
+ '--proc','/proc','--dev','/dev','--size','268435456','--tmpfs','/tmp','--tmpfs','/home','--dir','/home/worker',
+ *profile_args,'--dir','/run','--ro-bind',str(socket),'/run/browser-bridge.sock',
+ '--dir','/etc','--ro-bind','/etc/fonts','/etc/fonts','--clearenv','--setenv','PATH','/usr/bin',
+ '--setenv','MOZ_DISABLE_CONTENT_SANDBOX','1','--setenv','HOME','/home/worker','--setenv','LC_ALL','C.UTF-8','--setenv','XDG_CACHE_HOME','/tmp/cache',
+ '--','prlimit','--fsize=134217728','--core=0','--','/usr/bin/python3','/bridge.py','/browser/'+binary.name,*sys.argv[1:]]
+os.execvp(command[0],command)

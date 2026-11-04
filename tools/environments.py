@@ -210,7 +210,7 @@ def sandbox(path, data, args, profile='website'):
             '--ro-bind', ROOT / 'sandbox/environment-guard.php', '/site/wp-content/mu-plugins/fixture-guard.php',
             '--ro-bind' if data.get('visualClone') else '--bind', path / 'workspace', '/workspace',
             '--ro-bind' if data.get('visualClone') else '--bind', path / 'workspace/child-theme', '/site/wp-content/themes/client-child',
-            '--ro-bind' if data.get('visualClone') else '--bind', path / 'uploads', '/site/wp-content/uploads', '--bind', path / 'cache', '/site/wp-content/cache',
+            '--ro-bind' if data.get('visualClone') and data['visualClone'].get('purpose', 'visual') != 'functional' else '--bind', path / 'uploads', '/site/wp-content/uploads', '--bind', path / 'cache', '/site/wp-content/cache',
             '--bind', path / 'data', '/data', '--bind', path / 'run', '/run', '--bind', path / 'logs', '/logs', '--chdir', '/workspace']
     else:
         command += ['--bind', path / 'reference', '/reference', '--dir', '/run', '--dir', '/logs', '--chdir', '/reference']
@@ -300,6 +300,8 @@ def hashes(path):
 
 def clone_visual(path, data, payload):
     """Copy a logical DB snapshot and pinned presentation into a fresh private environment."""
+    purpose = payload.get('purpose', 'visual')
+    if purpose not in ('visual', 'functional'): raise ValueError('qa_clone_purpose_invalid')
     source_id = identity(payload['sourceEnvironmentId'])
     source_path = location(source_id)
     if source_id == data['id']: raise ValueError('visual_clone_self_rejected')
@@ -352,7 +354,7 @@ def clone_visual(path, data, payload):
             raise ValueError('visual_candidate_changed')
         if hashes(source_path / 'uploads') != uploads_hashes or hashes(path / 'uploads') != uploads_hashes:
             raise ValueError('visual_clone_uploads_changed')
-        provenance = {'sourceEnvironmentId':source_id, 'sourceDigest':digest, 'databaseDumpSha256':dump_digest,
+        provenance = {'sourceEnvironmentId':source_id, 'sourceDigest':digest, 'purpose':purpose, 'databaseDumpSha256':dump_digest,
             'uploadsSha256':hashlib.sha256(json.dumps(uploads_hashes,sort_keys=True).encode()).hexdigest()}
         data['visualClone'] = provenance
         save(path, data)

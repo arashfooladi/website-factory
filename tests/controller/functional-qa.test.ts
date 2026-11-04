@@ -29,3 +29,24 @@ test('functional checks distinguish real navigation/Persian search results from 
   await assert.rejects(checkFunctionalJourneys(input,artifacts,new AbortController().signal,{sourceDigest:async()=>'c'.repeat(64)}),/functional_candidate_changed/);
  }finally{server.closeAllConnections();await new Promise<void>(done=>server.close(()=>done()));await rm(root,{recursive:true,force:true});}
 });
+
+test('filters, keyboard activation and persisted forms reject decorative controls and false success',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'factory-functional-extended-'));let broken=false,submitted=false,posts=0;
+ const server=createServer(async(request,response)=>{
+  const url=new URL(request.url!,'http://fixture');if(request.method==='POST'){posts++;for await(const _ of request){}submitted=!broken;response.writeHead(303,{Location:'/thanks/'});response.end();return;}
+  response.setHeader('Content-Type','text/html; charset=utf-8');
+  response.end(`<html lang="fa"><body><main><a id="go" ${broken?'tabindex="-1"':''} href="/thanks/">Continue</a>
+  <select id="filter" aria-label="Category" onchange="${broken?'':'document.querySelector(\'#other\').remove()'}"><option value="all">All</option><option value="prints">Prints</option></select><p>چاپ</p><p id="other">دفتر</p>
+  <form method="post" action="/submit/"><label for="name">نام</label><input id="name" name="name" required><button id="send">Send</button></form>${url.pathname==='/thanks/'?'ثبت شد':''}</main></body></html>`);
+ });await new Promise<void>(done=>server.listen(0,'127.0.0.1',done));
+ const checks:FunctionalCheck[]=[{id:'filter',requirementId:'filter',kind:'filter',path:'/',selector:'#filter',value:'prints',expectedText:'چاپ',excludedText:'دفتر'},
+ {id:'keyboard',requirementId:'keyboard',kind:'keyboard',path:'/',target:'#go',expectedPath:'/thanks/',expectedText:'ثبت شد',maxTabs:6},
+ {id:'contact',requirementId:'contact',kind:'form',path:'/',fields:[{selector:'#name',value:'آزمایش فارسی'}],submit:'#send',expectedPath:'/thanks/',expectedText:'ثبت شد'}];
+ const input={origin:`http://127.0.0.1:${(server.address()as AddressInfo).port}`,token:'fixture',candidateRevision:'a'.repeat(40),sourceDigest:'b'.repeat(64),checks},artifacts=new AgentArtifacts(root,67108864);
+ const run=()=>checkFunctionalJourneys(input,artifacts,AbortSignal.timeout(120000),{sourceDigest:async()=>input.sourceDigest,allowMutation:true,verifyForm:async()=>submitted});
+ try{
+  const denied=await checkFunctionalJourneys({...input,checks:[checks[2]!] },artifacts,AbortSignal.timeout(30000),{sourceDigest:async()=>input.sourceDigest});assert.equal(denied.results[0]?.reason,'functional_form_oracle_required');assert.equal(posts,0);
+  const healthy=await run();assert.equal(healthy.requiresRepair,false,JSON.stringify(healthy.results.map(r=>({id:r.checkId,reason:r.reason}))));
+  broken=true;submitted=false;const defects=await run();assert(defects.results.every(r=>!r.passed&&r.after));assert.equal(defects.results[2]?.reason,'functional_form_persistence_missing');
+ }finally{server.closeAllConnections();await new Promise<void>(done=>server.close(()=>done()));await rm(root,{recursive:true,force:true});}
+});

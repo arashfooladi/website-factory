@@ -65,18 +65,26 @@
     "test:visual-reuse": "tsx --test tests/controller/visual-capture-reuse.test.ts",
     "test:functional-qa": "tsx --test tests/controller/functional-qa.test.ts",
     "test:admin-qa": "tsx --test tests/controller/admin-qa.test.ts",
-    "pilot:admin": "tsx tools/run_admin_pilot.ts"
+    "pilot:admin": "tsx tools/run_admin_pilot.ts",
+    "test:visual-baselines": "tsx --test tests/controller/visual-baselines.test.ts",
+    "test:functional-jobs": "tsx --test tests/controller/functional-jobs.test.ts",
+    "test:accessibility-qa": "tsx --test tests/controller/accessibility-qa.test.ts",
+    "test:browser-engines": "tsx --test tests/controller/browser-engines.test.ts",
+    "test:browser-upload": "tsx --test tests/controller/browser-upload.test.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
     "@types/node": "26.6.6",
     "@types/pg": "8.23.1",
+    "@types/pngjs": "6.0.5",
     "tsx": "4.23.15",
     "typescript": "7.0.2"
   },
   "dependencies": {
+    "@axe-core/playwright": "4.14.0",
     "pg": "8.23.1",
     "pg-boss": "12.38.0",
+    "pngjs": "7.0.0",
     "zod": "4.6.7"
   }
 }

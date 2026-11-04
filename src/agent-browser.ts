@@ -4,6 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
+import {launchIsolatedEngine} from './engine-bridge.js';
 import { AgentArtifacts } from './agent-artifacts.js';
 import { BrowserAction,type ExperienceObservation } from './agent-contracts.js';
 
@@ -22,6 +23,7 @@ interface BridgeResource {
 }
 export class AgentBrowser {
   private browser?:Browser;
+  private engineClose?:()=>Promise<void>;
   private context?:BrowserContext;
   private page?:Page;
   private bridgeSession?:CDPSession;
@@ -45,7 +47,7 @@ export class AgentBrowser {
   readonly id=randomUUID();
   readonly network:Array<{path:string;status:number;blocked?:boolean;reason?:string}>=[];
   private aborted=()=>{void this.close();};
-  constructor(readonly origin:string,private token:string,readonly artifacts:AgentArtifacts,readonly signal:AbortSignal,private networkAccess?:BrowserNetwork){
+  constructor(readonly origin:string,private token:string,readonly artifacts:AgentArtifacts,readonly signal:AbortSignal,private networkAccess?:BrowserNetwork,readonly engine:'chromium'|'firefox'|'webkit'='chromium'){
     const url=new URL(origin);
     if(networkAccess?!networkAccess.permits(url):url.protocol!=='http:'||url.hostname!=='127.0.0.1'||url.origin!==origin)throw new Error('invalid_preview_origin');
   }
@@ -67,13 +69,18 @@ export class AgentBrowser {
   async open(viewport={width:1280,height:900}){
     this.check();
     this.signal.addEventListener('abort',this.aborted,{once:true});
-    this.browser=await chromium.launch({executablePath:resolve('tools/browser-sandbox'),timeout:60_000,
+    if(this.engine!=='chromium'){
+      if(this.networkAccess)throw new Error('engine_reference_profile_unsupported');
+      const launched=await launchIsolatedEngine(this.engine,this.id,request=>this.route(request));this.browser=launched.browser;this.engineClose=launched.close;
+    }else this.browser=await chromium.launch({executablePath:resolve('tools/browser-sandbox'),timeout:60_000,
       env:{PATH:'/usr/bin',XDG_RUNTIME_DIR:process.env.XDG_RUNTIME_DIR??`/run/user/${process.getuid!()}`,
         ...(process.env.DBUS_SESSION_BUS_ADDRESS?{DBUS_SESSION_BUS_ADDRESS:process.env.DBUS_SESSION_BUS_ADDRESS}:{}),FACTORY_BROWSER_RUN:this.id}});
     this.check();
     this.context=await this.browser.newContext({viewport,serviceWorkers:'block',acceptDownloads:false});
     await this.context.routeWebSocket('**/*',socket=>socket.close());
     this.page=await this.context.newPage();
+    this.page.on('response',response=>{if(response.request().isNavigationRequest()&&response.frame()===this.page?.mainFrame())this.mainStatus=response.status();});
+    if(this.engine==='chromium'){
     this.bridgeSession=await this.context.newCDPSession(this.page);
     const session=this.bridgeSession;
     await session.send('Page.enable');
@@ -87,6 +94,7 @@ export class AgentBrowser {
     });});
     await session.send('Network.enable');await session.send('Network.setCacheDisabled',{cacheDisabled:true});
     await session.send('Fetch.enable',{patterns:[{urlPattern:'*',requestStage:'Request'}]});
+    }
     this.page.setDefaultTimeout(5000);
     this.page.setDefaultNavigationTimeout(30_000);
     this.context.on('page',page=>{if(page!==this.page){this.blockedPopups++;void page.close();}});
@@ -227,6 +235,7 @@ export class AgentBrowser {
   async close(){
     this.signal.removeEventListener('abort',this.aborted);
     await this.context?.close().catch(()=>{});await this.browser?.close().catch(()=>{});
+    await this.engineClose?.();this.engineClose=undefined;
     await exec('systemctl',['--user','stop','factory_browser_'+this.id.replaceAll('-','')+'.scope']).catch(()=>{});
   }
 }

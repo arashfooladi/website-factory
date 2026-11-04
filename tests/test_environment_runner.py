@@ -9,6 +9,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import environments
 
 class EnvironmentRunnerTest(unittest.TestCase):
+    def test_functional_clone_only_relaxes_uploads_mount(self):
+        data = {'id':'a4c053c4-644e-458c-bc96-4296bbb1aa19','projectId':'16143b0c-ea5e-4657-bc2c-5a1a4f73819c',
+                'cache':'/cache','limits':{'fileSizeMiB':64}}
+        for purpose, expected in [('visual','--ro-bind'),('functional','--bind')]:
+            data['visualClone'] = {'purpose':purpose}
+            with patch.object(environments, 'download', return_value=Path('/fixture')):
+                command = [str(value) for value in environments.sandbox(Path('/qa'),data,['true'])]
+            self.assertEqual(command[command.index('/qa/uploads')-1],expected)
+            self.assertEqual(command[command.index('/qa/workspace')-1],'--ro-bind')
+            self.assertEqual(command[command.index('/qa/workspace/child-theme')-1],'--ro-bind')
+
+    def test_invalid_clone_purpose_is_rejected_before_source_access(self):
+        with patch.object(environments, 'metadata', side_effect=AssertionError('must not read source')):
+            with self.assertRaisesRegex(ValueError,'qa_clone_purpose_invalid'):
+                environments.clone_visual(Path('/qa'),{}, {'purpose':'production'})
+
     def test_non_uuid_paths_are_rejected(self):
         for value in ['../../controller', '/etc', 'client-name']:
             with self.assertRaises(ValueError): environments.location(value)

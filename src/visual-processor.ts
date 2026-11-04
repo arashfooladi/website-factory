@@ -4,6 +4,7 @@ import type {Controller} from './controller.js';
 import type {Environments} from './environments.js';
 import type {ProviderAdapter} from './agent-contracts.js';
 import {VisualReviewJobs,type VisualJobProcessor} from './visual-jobs.js';
+import {VisualBaselines} from './visual-baselines.js';
 import {reuseVisualCapture} from './visual-capture-reuse.js';
 import {AgentWorkspace} from './agent-workspace.js';
 import {AgentReference} from './agent-reference.js';
@@ -52,12 +53,13 @@ export function visualProcessor(controller:Controller,environments:Environments,
   const stress=await captureContentStress({origin,token:secret.previewToken,candidateRevision:row.candidate_revision,sourceDigest:row.source_digest,paths:criticalPaths.length?criticalPaths:paths},artifacts,signal,hooks);
   const stressArtifact=await artifacts.save('visual_stress_report','application/json',JSON.stringify(stress));
   await preview.close();
-  return{capture,sweep,stress,captured,sweepArtifact,stressArtifact,provenanceArtifact,previewEnvironmentId:environment.id};
+  return{capture,sweep,stress,captured,sweepArtifact,stressArtifact,provenanceArtifact,priorReviews:[],previewEnvironmentId:environment.id};
   }finally{await preview.close();}
   }
   const material=row.input.reuseCaptureReviewId?await reuseVisualCapture(new VisualReviewJobs(controller,{provider:adapter.name,run:async()=>{throw new Error('visual_reader_only');}}),controller.config.ownerId,row.input.reuseCaptureReviewId,row,artifacts):await captureFresh();
   if(row.input.reuseCaptureReviewId)await event('capture_reused',{sourceReviewId:row.input.reuseCaptureReviewId});
   const {capture,sweep,stress,captured,sweepArtifact,stressArtifact,provenanceArtifact,previewEnvironmentId}=material;
+  const regression=row.input.baselineId?await new VisualBaselines(controller,new VisualReviewJobs(controller,{provider:adapter.name,run:async()=>{throw new Error('visual_reader_only');}})).compare(controller.config.ownerId,row.input.baselineId,row.candidate_run_id,capture,artifacts):{status:'not-applicable',reason:'No accepted baseline selected for this initial assessment',requiresReview:false};
   const profile=candidate.design_profile_id?await new DesignProfiles(controller,adapter).assigned(controller.config.ownerId,candidate.design_profile_id):undefined;
   const loaded=await loadAgentInstructions('visual_reviewer',candidate.skill_versions.selection??controller.config.skillsetVersion,spec.brief.design,profile,{indexReviewPacks:true});
   for(const [key,value]of Object.entries(candidate.skill_versions))if(key.endsWith('_sha256')&&loaded.skillVersions[key]&&loaded.skillVersions[key]!==value)throw new Error('visual_instruction_content_changed');
@@ -70,10 +72,10 @@ export function visualProcessor(controller:Controller,environments:Environments,
    '\nCompare visual fidelity using each page’s protected resolved axes. Match requires observed similarity; adapt permits client-specific departures consistent with the brief and DESIGN.md. Do not impose exact-copy expectations on free axes. Record missing comparisons as unverified; interactions require separate functional tests.';
   await artifacts.save('visual_review_instructions','text/plain',instructions);
   const reviewCaptures={...capture,captures:[...capture.captures,...stress.captures],coverage:{complete:capture.coverage.complete&&stress.coverage.complete}};
-  const assessment=await assessVisualCaptures(reviewCaptures,artifacts,adapter,{model:row.model,instructions,skillVersions:loaded.skillVersions,requirements:spec.acceptance.requirements.map((item:any)=>item.id),maxObservedTokens:row.input.maxObservedTokens,reference,fidelity:{brief:spec.brief,states:spec.reference.states}},signal,usage,event);
+  const assessment=await assessVisualCaptures(reviewCaptures,artifacts,adapter,{model:row.model,instructions,priorReviews:material.priorReviews,skillVersions:loaded.skillVersions,requirements:spec.acceptance.requirements.map((item:any)=>item.id),maxObservedTokens:row.input.maxObservedTokens,reference,fidelity:{brief:spec.brief,states:spec.reference.states}},signal,usage,event);
   if(!row.input.reuseCaptureReviewId&&(await new AgentWorkspace(environments,candidate.environment_id).export()).sha256!==row.source_digest)throw new Error('visual_candidate_changed');
-  return{candidateRevision:row.candidate_revision,sourceDigest:row.source_digest,captureReportId:captured.id,breakpointReportId:sweepArtifact.id,stressReportId:stressArtifact.id,assessment,
-   requiresRepair:capture.findings.length>0||sweep.findings.length>0||stress.findings.length>0||assessment.requiresRepair,coverageComplete:capture.coverage.complete&&sweep.coverage.complete&&stress.coverage.complete&&assessment.coverageComplete,
+  return{candidateRevision:row.candidate_revision,sourceDigest:row.source_digest,captureReportId:captured.id,breakpointReportId:sweepArtifact.id,stressReportId:stressArtifact.id,assessment,regression,
+   requiresRepair:regression.requiresReview||capture.findings.length>0||sweep.findings.length>0||stress.findings.length>0||assessment.requiresRepair,coverageComplete:capture.coverage.complete&&sweep.coverage.complete&&stress.coverage.complete&&assessment.coverageComplete,
    candidateDataIsolation:'isolated-logical-clone',previewEnvironmentId,freshPreviewObserved:!row.input.reuseCaptureReviewId,captureSourceReviewId:row.input.reuseCaptureReviewId??row.id,previewProvenanceId:provenanceArtifact.id,visualReferenceComparisonComplete:assessment.visualReferenceComparisonComplete,referenceFidelityVerified:false,releaseEligible:false,
    scope:row.input.reuseCaptureReviewId?'Assessment of the original captured data snapshot; no fresh preview was observed. Interactive fidelity and release certification remain separate gates.':'Visual quality and policy-bound reference comparisons from an isolated data clone with read-only child source/uploads. Interactive fidelity, functional/admin checks and release certification remain separate gates.'};
  }};

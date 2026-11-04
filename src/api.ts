@@ -12,7 +12,9 @@ import {DESIGN_PRESETS} from './design-policy.js';
 import {Themes} from './themes.js';
 import {DesignProfiles} from './design-profiles.js';
 import type {Builds} from './builds.js';
+import type {FunctionalReviewJobs} from './functional-jobs.js';
 import type {VisualReviewJobs} from './visual-jobs.js';
+import {VisualBaselines} from './visual-baselines.js';
 
 async function body(request: IncomingMessage): Promise<unknown> {
   if (!request.headers['content-type']?.startsWith('application/json')) throw new ControllerError('json_required', 415);
@@ -27,7 +29,7 @@ async function body(request: IncomingMessage): Promise<unknown> {
   catch { throw new ControllerError('invalid_json', 400); }
 }
 
-export function createApi(controller: Controller, environments?: Environments, agents?:Agents,intakes?:Intakes,themes=new Themes(controller),profiles=new DesignProfiles(controller),builds?:Builds,visual?:VisualReviewJobs) {
+export function createApi(controller: Controller, environments?: Environments, agents?:Agents,intakes?:Intakes,themes=new Themes(controller),profiles=new DesignProfiles(controller),builds?:Builds,visual?:VisualReviewJobs,functional?:FunctionalReviewJobs) {
   const assets=new ProjectAssets(controller);
   const expected = createHash('sha256').update(`Bearer ${controller.config.apiToken}`).digest();
   const server = createServer(async (request, response) => {
@@ -44,6 +46,9 @@ export function createApi(controller: Controller, environments?: Environments, a
       if (request.headers.origin) throw new ControllerError('browser_origin_not_enabled', 403);
       const path = new URL(request.url ?? '/', 'http://localhost').pathname;
       const owner = controller.config.ownerId;
+      if(visual&&path==='/v1/visual-baselines'&&request.method==='POST'){const input=z.object({reviewId:Id,decision:z.literal('accept')}).strict().parse(await body(request));return reply(201,await new VisualBaselines(controller,visual).accept(owner,input.reviewId));}
+      const baseline=path.match(/^\/v1\/visual-baselines\/([^/]+)$/);
+      if(visual&&baseline&&request.method==='GET')return reply(200,await new VisualBaselines(controller,visual).owned(owner,Id.parse(baseline[1])));
       if(visual&&path==='/v1/visual-reviews'&&request.method==='POST')return reply(202,await visual.create(owner,await body(request)));
       const review=path.match(/^\/v1\/visual-reviews\/([^/]+)(?:\/(cancel|artifacts)(?:\/([^/]+))?)?$/);
       if(visual&&review){const id=Id.parse(review[1]);
@@ -51,6 +56,15 @@ export function createApi(controller: Controller, environments?: Environments, a
         if(review[2]==='cancel'&&request.method==='POST')return reply(202,await visual.cancel(owner,id));
         if(review[2]==='artifacts'&&review[3]&&request.method==='GET'){
           const item=await visual.artifact(owner,id,Id.parse(review[3]));response.setHeader('Content-Type',item.metadata.mediaType);response.setHeader('Content-Disposition',`attachment; filename="${item.metadata.id}"`);response.setHeader('Content-Security-Policy',"default-src 'none'");response.writeHead(200);response.end(item.bytes);return;
+        }
+      }
+      if(functional&&path==='/v1/functional-reviews'&&request.method==='POST')return reply(202,await functional.create(owner,await body(request)));
+      const functionalReview=path.match(/^\/v1\/functional-reviews\/([^/]+)(?:\/(cancel|artifacts)(?:\/([^/]+))?)?$/);
+      if(functional&&functionalReview){const id=Id.parse(functionalReview[1]);
+        if(!functionalReview[2]&&request.method==='GET')return reply(200,await functional.inspect(owner,id));
+        if(functionalReview[2]==='cancel'&&request.method==='POST')return reply(202,await functional.cancel(owner,id));
+        if(functionalReview[2]==='artifacts'&&functionalReview[3]&&request.method==='GET'){
+          const item=await functional.artifact(owner,id,Id.parse(functionalReview[3]));response.setHeader('Content-Type',item.metadata.mediaType);response.setHeader('Content-Disposition',`attachment; filename="${item.metadata.id}"`);response.setHeader('Content-Security-Policy',"default-src 'none'");response.writeHead(200);response.end(item.bytes);return;
         }
       }
       const projectTheme=path.match(/^\/v1\/projects\/([^/]+)\/theme$/);

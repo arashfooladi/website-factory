@@ -32,5 +32,22 @@ export async function reuseVisualCapture(jobs:Pick<VisualReviewJobs,'inspect'|'a
  const provenanceArtifact=await artifacts.save('visual_preview_provenance','application/json',JSON.stringify(provenance));
  await artifacts.save('visual_capture_reuse','application/json',JSON.stringify({sourceReviewId:id,sourceAttemptId:old.attempt_id,candidateRevision:expected.candidate_revision,sourceDigest:expected.source_digest,
   notice:'Assessment of the original captured data snapshot; no fresh live preview was observed.'}));
- return{...copied,captured,sweepArtifact,stressArtifact,provenanceArtifact,previewEnvironmentId:old.qa_environment_id};
+ const priorReviews:any[]=[];
+ const completed=new Set(old.events.filter((e:any)=>e.type==='task_finished'&&e.data.status==='completed'&&e.data.usage?.confirmed===true).map((e:any)=>e.data.path));
+ const routeById=new Map([...capture.captures,...stress.captures].map((c:any)=>[c.structureId,c.path]));
+ for(const item of old.artifacts.filter((a:any)=>['visual_review','visual_prior_assessment'].includes(a.kind))){
+  const raw=JSON.parse((await jobs.artifact(owner,id,item.id)).bytes.toString()),inherited=item.kind==='visual_prior_assessment';
+  const result=inherited?raw.result:raw;
+  if(result.candidateRevision!==expected.candidate_revision||result.sourceDigest!==expected.source_digest||result.releaseEligible!==false)throw new Error('visual_reuse_assessment_invalid');
+  const paths=new Set([...result.reviewedCaptureIds,...result.unreviewed.map((c:any)=>c.captureId)].map((captureId:string)=>routeById.get(captureId)));
+  if(paths.size!==1||paths.has(undefined))throw new Error('visual_reuse_assessment_invalid');
+  const path=[...paths][0];const inheritedProof=inherited&&old.events.some((e:any)=>e.type==='assessment_reused'&&e.data.path===path&&e.data.sourceReviewId===raw.sourceReviewId);if(!completed.has(path)&&!inheritedProof)continue;
+  const tasks=old.artifacts.filter((a:any)=>a.kind==='visual_review_task');let compatible=inheritedProof;
+  for(const taskArtifact of tasks){const task=JSON.parse((await jobs.artifact(owner,id,taskArtifact.id)).bytes.toString());if(task.path===path&&/^evidence-v[34]$/.test(task.skillVersions?.visualReview??''))compatible=true;}
+  if(!compatible)continue;
+  const remap=(value:any):any=>typeof value==='string'?replacements.get(value)??value:Array.isArray(value)?value.map(remap):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([k,v])=>[k,remap(v)])):value;
+  const imported=remap(result);priorReviews.push({path,result:imported,sourceReviewId:id});
+  await artifacts.save('visual_prior_assessment','application/json',JSON.stringify({path,result:imported,sourceReviewId:id}));
+ }
+ return{...copied,captured,sweepArtifact,stressArtifact,provenanceArtifact,priorReviews,previewEnvironmentId:old.qa_environment_id};
 }

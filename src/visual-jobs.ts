@@ -10,7 +10,7 @@ import {AgentArtifacts} from './agent-artifacts.js';
 import type {ProviderUsage} from './agent-contracts.js';
 import {canonicalJson,sha256} from './immutable.js';
 
-export const VisualJobInput=z.object({candidateRunId:z.uuid(),reuseCaptureReviewId:z.uuid().optional(),maxRuntimeMs:z.number().int().min(10000).max(3600000).default(1800000),
+export const VisualJobInput=z.object({candidateRunId:z.uuid(),baselineId:z.uuid().optional(),reuseCaptureReviewId:z.uuid().optional(),maxRuntimeMs:z.number().int().min(10000).max(3600000).default(1800000),
  maxObservedTokens:z.number().int().min(1000).max(3000000).default(1000000)}).strict();
 export type VisualJobProcessor={provider:string;run:(row:any,artifacts:AgentArtifacts,signal:AbortSignal,usage:ProviderUsage,event:(type:string,data:Record<string,unknown>)=>Promise<void>)=>Promise<unknown>};
 const exec=promisify(execFile);
@@ -37,6 +37,7 @@ export class VisualReviewJobs{
     if(['queued','running','cancelling'].includes(previous.status))throw new ControllerError('visual_reuse_requires_terminal_review');
     for(const kind of ['visual_capture_report','visual_breakpoint_report','visual_stress_report','visual_preview_provenance'])if(previous.artifacts.filter((a:any)=>a.kind===kind).length!==1)throw new ControllerError('visual_reuse_capture_missing');
    }
+   if(input.baselineId){const base=(await client.query('SELECT b.* FROM factory.visual_baselines b JOIN factory.projects p ON p.id=b.project_id WHERE b.id=$1 AND p.owner_id=$2',[input.baselineId,owner])).rows[0];if(!base)throw new ControllerError('not_found',404);const intake=(await client.query('SELECT acceptance_sha256 FROM factory.intakes WHERE id=$1',[candidate.intake_id])).rows[0];if(base.project_id!==candidate.project_id||base.acceptance_sha256!==intake.acceptance_sha256)throw new ControllerError('visual_regression_candidate_mismatch');}
    await client.query('SELECT id FROM factory.environments WHERE id=$1 FOR UPDATE',[candidate.environment_id]);
    if((await client.query("SELECT 1 FROM factory.agent_runs WHERE environment_id=$1 AND status IN ('queued','running','cancelling')",[candidate.environment_id])).rowCount)throw new ControllerError('visual_environment_busy');
    if((await client.query("SELECT 1 FROM factory.visual_reviews v JOIN factory.agent_runs r ON r.id=v.candidate_run_id WHERE r.environment_id=$1 AND v.status IN ('queued','running','cancelling')",[candidate.environment_id])).rowCount)throw new ControllerError('visual_review_active');

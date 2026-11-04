@@ -7,13 +7,14 @@ import {loadConfig} from '../src/config.js';
 import {Environments} from '../src/environments.js';
 import {VisualPreview} from '../src/visual-preview.js';
 import {AgentArtifacts} from '../src/agent-artifacts.js';
+import {checkCommerce} from '../src/commerce-qa.js';
 import {checkAdminProduct} from '../src/admin-qa.js';
 
-const {values}=parseArgs({options:{retainFailed:{type:'boolean'},environment:{type:'string'}}});
+const {values}=parseArgs({options:{retainFailed:{type:'boolean'},commerceOnly:{type:'boolean'},shipping:{type:'string'},categories:{type:'boolean'},variations:{type:'boolean'},media:{type:'boolean'},environment:{type:'string'}}});
 // Operator pilot. Uses the running controller's environment worker; no inference worker.
 const controller=await new Controller(await loadConfig()).open(),environments=new Environments(controller),id=randomUUID();
 const artifacts=new AgentArtifacts(join('.runtime/controller/part-9-pilot',id),67108864),signal=AbortSignal.timeout(1800000);
-let preview:VisualPreview|undefined,retain=false,reused:string|undefined;
+let preview:VisualPreview|undefined,retain=false,reused:string|undefined,allocated:string|undefined;
 try{
  const candidate=(await controller.pool.query("SELECT * FROM factory.agent_runs WHERE id=$1 AND status='completed'",['6d2d0b91-ea60-467b-8553-b66cb627a432'])).rows[0];if(!candidate)throw new Error('admin_pilot_candidate_missing');
  artifacts.revision=candidate.candidate_revision;
@@ -22,7 +23,7 @@ try{
  const until=Date.now()+600000;
  while(source.status!=='running'||source.current_operation_id){signal.throwIfAborted();if(source.status==='failed'||Date.now()>until)throw new Error('admin_pilot_source_unavailable');await new Promise(done=>setTimeout(done,1000));source=await environments.inspect(controller.config.ownerId,source.id);}
  preview=new VisualPreview(controller,environments,{id,attempt_id:randomUUID(),project_id:candidate.project_id,source_digest:candidate.source_digest,input:{maxRuntimeMs:1800000}},signal,
-  async(type,data)=>{console.log(JSON.stringify({type,...data}));});
+  async(type,data)=>{if(type==='qa_environment_allocated')allocated=String(data.environmentId);console.log(JSON.stringify({type,...data}));},values.media||values.commerceOnly?'functional':'visual');
  const {environment,provenance}=values.environment?{environment:await environments.inspect(controller.config.ownerId,values.environment),provenance:{reusedEnvironmentId:values.environment}}:await preview.open(source);
  if(environment.project_id!==candidate.project_id)throw new Error('admin_pilot_project_mismatch');
  if(values.environment){
@@ -30,10 +31,13 @@ try{
   if(environment.id===candidate.environment_id||metadata.visualClone?.sourceEnvironmentId!==candidate.environment_id||metadata.visualClone?.sourceDigest!==candidate.source_digest)throw new Error('admin_pilot_clone_required');
   reused=environment.id;
  }await artifacts.save('admin_preview_provenance','application/json',JSON.stringify(provenance));
- const report=await checkAdminProduct(environments,controller.config.ownerId,environment.id,{revision:candidate.candidate_revision,sourceDigest:candidate.source_digest,sourceEnvironmentId:candidate.environment_id},artifacts,signal);
+ const report=values.commerceOnly?await checkCommerce(environments,controller.config.ownerId,environment.id,{revision:candidate.candidate_revision,sourceDigest:candidate.source_digest,sourceEnvironmentId:candidate.environment_id},{gateway:'cod',shipping:Number(values.shipping??'50000'),quantity:2,orderStatus:'processing'},artifacts,signal):await checkAdminProduct(environments,controller.config.ownerId,environment.id,{revision:candidate.candidate_revision,sourceDigest:candidate.source_digest,sourceEnvironmentId:candidate.environment_id,categories:values.categories===true,variations:values.variations===true,media:values.media===true},artifacts,signal);
  await writeFile(join(artifacts.directory,'result.json'),JSON.stringify({id,report,artifacts:artifacts.records.map(({filename,...metadata})=>metadata)}),{mode:0o600});
  console.log(JSON.stringify({id,passed:report.passed,reason:report.reason,cleanupVerified:report.cleanupVerified,evidenceStates:report.evidence.length}));
  if(!report.passed){process.exitCode=1;retain=values.retainFailed===true; if(retain)console.log(JSON.stringify({retainedEnvironmentId:environment.id,scope:'Disposable QA clone; existing expiry/retention still apply.'}));}
+}catch(error){
+ if(values.retainFailed&&allocated){retain=true;console.log(JSON.stringify({retainedEnvironmentId:allocated,reason:'pilot_setup_failed',scope:'Disposable allocated environment; inspect private host log. Existing expiry/retention applies.'}));}
+ throw error;
 }finally{
  try{
  if(preview&&!retain)await preview.close();

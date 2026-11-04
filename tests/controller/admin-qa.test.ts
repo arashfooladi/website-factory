@@ -18,6 +18,8 @@ test('admin writes are refused before credentials/runtime access on ordinary or 
    await writeFile(join(directory,'private.json'),JSON.stringify(metadata));
    await assert.rejects(checkAdminProduct(environments,'owner',id,candidate,artifacts,new AbortController().signal),/admin_qa_isolated_clone_required/);
   }
+  await writeFile(join(directory,'private.json'),JSON.stringify({visualClone:{sourceEnvironmentId:candidate.sourceEnvironmentId,sourceDigest:candidate.sourceDigest,purpose:'visual'}}));
+  await assert.rejects(checkAdminProduct(environments,'owner',id,{...candidate,media:true},artifacts,new AbortController().signal),/admin_qa_media_clone_required/);
   assert.equal(calls,0);assert.equal(artifacts.records.length,0);
  }finally{await rm(root,{recursive:true,force:true});}
 });

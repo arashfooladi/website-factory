@@ -1,21 +1,57 @@
-# Part 9 — functional, WordPress admin and commerce QA
+# Functional QA — development API and scope
 
-Started after the operator requested pushing the Part 8 checkpoint and moving to the next part. Part 8's outstanding full assessment and accepted-baseline comparison remain recorded.
+Part 9 is in progress. The default controller now registers a durable, owner-scoped functional review worker. No AI provider is called by these protected checks.
 
-The first browser runner executes trusted navigation and GET-search checks against authenticated loopback fixtures. It verifies actual destination URLs, HTTP status and expected main content. Search submits the real form and checks the encoded query, including Persian input. Positive and no-result expectations distinguish working search from a form that merely returns all products. Each check stores before/after screenshots, HTML, layout and reproduction steps tied to the candidate revision/source digest. Source changes abort publication. These checks invoke no AI provider.
+`POST /v1/functional-reviews` accepts a published builder `candidateRunId`, a protected `plan`, and optional `maxRuntimeMs` (10 seconds to one hour; default 30 minutes). Use the normal private controller bearer credential. Inspect with `GET /v1/functional-reviews/:id`, cancel with `POST /v1/functional-reviews/:id/cancel`, and download immutable evidence with `GET /v1/functional-reviews/:id/artifacts/:artifactId`.
 
-This is a library foundation, not the completed Part 9 service. Expectations must come from protected controller rules and client acceptance data; the builder must not author its own pass criteria. The runner currently uses Chromium desktop and performs navigation/search only. It is not exposed as an agent tool or a new API.
+Example of a small operator-authored plan:
 
-Remaining work: run the protected journeys against an isolated WordPress clone, extend cart/checkout/forms/filter/account behavior, exercise the client's real admin role for product/variation/category/media/price/stock/order management, cover Persian addresses/shipping/gateway sandbox outcomes, keyboard/accessibility and additional browser engines, and add durable owned orchestration. No order or payment test belongs on a live client store. Every report retains releaseEligible:false.
+```json
+{
+  "candidateRunId": "PUBLISHED_BUILDER_RUN_UUID",
+  "plan": {
+    "journeys": [{
+      "id": "catalog-link",
+      "requirementId": "navigation:catalog",
+      "kind": "navigation",
+      "path": "/",
+      "linkText": "فروشگاه",
+      "expectedPath": "/shop/",
+      "expectedText": "فروشگاه"
+    }],
+    "requiredChecks": ["catalog-link"]
+  }
+}
+```
 
-Initial verification passed: Chromium exercised healthy navigation, positive Persian search and no-result search, then detected a wrong link destination and a search that ignored its query. It rejected a POST search form before submitting anything (zero POST requests), preserved paired failure evidence, and rejected a changed candidate digest. Type checking, compilation and whitespace checks passed. These are controlled local fixtures, not native WordPress/admin certification. This Part 9 slice remains local after the 0fc7aec push.
+A small plan proves only its assigned checks. It is not a complete-site or release pass. Use project-specific protected text/selectors and include every required assignment. The schema rejects missing/duplicate required IDs.
 
-The admin product runner is implemented for a controller-created QA clone only. It refuses ordinary environments, self-copies and mismatched source digests before reading credentials or executing runtime commands; the guard test passed. It signs in through wp-login as client_admin, creates a unique Persian-named product through wp-admin, verifies price/managed stock through a trusted readback, checks catalog discovery, edits title/price/stock through the UI and checks the unavailable storefront. A scoped oracle cleans up only the UUID-tagged QA product. Cleanup failure prevents success. Source-digest checks fence the run.
+Supported journey kinds are `navigation`, `search` (`query`), `filter` (`selector`, `value`, `excludedText`) and `keyboard` (`target`, `expectedPath`, optional `maxTabs`). Each has an `id`, `requirementId`, route and expected main-content text. Filters must demonstrate both inclusion and exclusion. Keyboard checks use actual Tab/Enter events.
 
-The operator pilot (`npm run pilot:admin`) is currently provisioning an isolated clone of the retained prototype. It uses the controller's existing environment worker, saves private evidence under .runtime/controller/part-9-pilot and destroys the clone afterward. It makes no AI calls and has no production-site mode. The final native simple-product check passed; details follow below. The normal runner remains a library, not a durable admin QA API.
+Optional modules:
 
-Native admin verification (2026-11-04): operator replay 6df32b32-4613-4c0b-a1dd-b5d9c6b88f8e passed against the isolated retained-prototype clone, with five paired evidence states and verified product cleanup. It exercised real client_admin login, Persian title/SKU creation, publication, catalog discovery, regular price/managed-stock persistence, title/price/zero-stock editing, formatted storefront price and unavailable purchase controls. It made no AI calls.
+- `admin`: `{ "categories": true, "media": true, "variations": true }`, required ID `admin:product-management`.
+- `commerce`: `{ "gateway": "cod", "shipping": 50000, "orderStatus": "processing", "quantity": 2 }`, required ID `commerce:checkout-orders`. These amounts/status are protected expectations, not values inferred from the tested checkout. This runner currently supports COD only and remains pending native acceptance.
+- `accessibility`: an array of routes, required ID `accessibility:automated`. Automated WCAG A/AA rules run at desktop/mobile; violations and incomplete checks hold the result for review.
 
-Earlier attempts remain failed: the initial five-second browser action budget interrupted login; the next reached the editor but clicked Publish while WordPress could temporarily disable it; the following completed CMS edits but assumed the default WooCommerce summary wrapper. The corrected runner waits for Publish readiness and checks the main product price without requiring that wrapper. Raw failure evidence and redacted diagnostics remain private. This success is operator-assisted verification, not a completed durable admin QA service or whole-site certification.
+The worker verifies the published source, creates a private functional clone with read-only child/workspace and writable cloned uploads, records provenance, runs assignments, checks source stability and destroys the clone. WordPress writes use the ordinary client-admin browser session. A controller-only PHP oracle verifies persistence and deletes only uniquely scoped QA products, terms, images and orders. The original site is not the mutation target.
 
-The pilot can temporarily retain a failed QA clone with --retainFailed for investigation (normal expiry/retention still apply), and can reuse it with --environment <qa-clone-uuid>. It verifies the source identity and digest before treating an existing environment as disposable or scheduling cleanup. A negative operator probe refused the source environment itself. Successful reused runs remove the QA clone. Ordinary runs destroy their clones automatically.
+The lower-level form runner requires both explicit mutation authorization from trusted controller code and a persistence oracle. A success message alone cannot pass a form. It is not yet exposed in the durable plan because project-specific sink/account adapters remain unfinished.
+
+Checks produce candidate-bound artifacts and `releaseEligible: false`. Cancelled/interrupted/stale workers cannot publish a passing report. Required but unassigned integrations, real gateway credentials and further browser coverage are remaining work, as recorded in the [stage report](STAGE-REPORT.md).
+
+Local verification commands:
+
+```sh
+npm run test:functional-qa
+npm run test:admin-qa
+npm run test:accessibility-qa
+npm run test:browser-upload
+# Requires prepared PostgreSQL test database; run queue suites sequentially:
+npm run test:functional-jobs
+npm run test:visual-baselines
+```
+
+`npm run test:browser-engines` requires `npx playwright install firefox webkit` plus compatible system libraries. Firefox transport passed locally; WebKit download failed and its test is not claimed passing. Neither engine bypasses the network namespace: their HTTP proxy forwards through a scoped Unix socket to the same single-origin controller bridge. CONNECT and other origins are denied.
+
+`npm run pilot:admin -- --categories --media --variations --retainFailed` is the operator pilot for the fixed Part 7 candidate. `--commerceOnly --shipping 50000` selects the unfinished native commerce pilot. These tools reference the local pilot candidate and require its private runtime; they are not portable client release commands. Retained failures still expire according to environment limits.

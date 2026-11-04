@@ -82,6 +82,7 @@ export class Agents {
         if(input.projectId&&input.projectId!==environment.project_id)throw new ControllerError('project_environment_mismatch');
         if(environment.status!=='running'||environment.current_operation_id)throw new ControllerError('environment_not_running');
         if((await client.query("SELECT 1 FROM factory.visual_reviews v JOIN factory.agent_runs r ON r.id=v.candidate_run_id WHERE (r.environment_id=$1 OR v.qa_environment_id=$1) AND v.status IN ('queued','running','cancelling')",[environment.id])).rowCount)throw new ControllerError('visual_review_active');
+        if((await client.query("SELECT 1 FROM factory.functional_reviews v JOIN factory.agent_runs r ON r.id=v.candidate_run_id WHERE (r.environment_id=$1 OR v.qa_environment_id=$1) AND v.status IN ('queued','running','cancelling')",[environment.id])).rowCount)throw new ControllerError('functional_review_active');
         projectId=environment.project_id;
       }else{
         const project=(await client.query('SELECT * FROM factory.projects WHERE id=$1 AND owner_id=$2 FOR UPDATE',[input.projectId,owner])).rows[0];
