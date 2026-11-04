@@ -12,6 +12,7 @@ import {DESIGN_PRESETS} from './design-policy.js';
 import {Themes} from './themes.js';
 import {DesignProfiles} from './design-profiles.js';
 import type {Builds} from './builds.js';
+import type {VisualReviewJobs} from './visual-jobs.js';
 
 async function body(request: IncomingMessage): Promise<unknown> {
   if (!request.headers['content-type']?.startsWith('application/json')) throw new ControllerError('json_required', 415);
@@ -26,7 +27,7 @@ async function body(request: IncomingMessage): Promise<unknown> {
   catch { throw new ControllerError('invalid_json', 400); }
 }
 
-export function createApi(controller: Controller, environments?: Environments, agents?:Agents,intakes?:Intakes,themes=new Themes(controller),profiles=new DesignProfiles(controller),builds?:Builds) {
+export function createApi(controller: Controller, environments?: Environments, agents?:Agents,intakes?:Intakes,themes=new Themes(controller),profiles=new DesignProfiles(controller),builds?:Builds,visual?:VisualReviewJobs) {
   const assets=new ProjectAssets(controller);
   const expected = createHash('sha256').update(`Bearer ${controller.config.apiToken}`).digest();
   const server = createServer(async (request, response) => {
@@ -43,6 +44,15 @@ export function createApi(controller: Controller, environments?: Environments, a
       if (request.headers.origin) throw new ControllerError('browser_origin_not_enabled', 403);
       const path = new URL(request.url ?? '/', 'http://localhost').pathname;
       const owner = controller.config.ownerId;
+      if(visual&&path==='/v1/visual-reviews'&&request.method==='POST')return reply(202,await visual.create(owner,await body(request)));
+      const review=path.match(/^\/v1\/visual-reviews\/([^/]+)(?:\/(cancel|artifacts)(?:\/([^/]+))?)?$/);
+      if(visual&&review){const id=Id.parse(review[1]);
+        if(!review[2]&&request.method==='GET')return reply(200,await visual.inspect(owner,id));
+        if(review[2]==='cancel'&&request.method==='POST')return reply(202,await visual.cancel(owner,id));
+        if(review[2]==='artifacts'&&review[3]&&request.method==='GET'){
+          const item=await visual.artifact(owner,id,Id.parse(review[3]));response.setHeader('Content-Type',item.metadata.mediaType);response.setHeader('Content-Disposition',`attachment; filename="${item.metadata.id}"`);response.setHeader('Content-Security-Policy',"default-src 'none'");response.writeHead(200);response.end(item.bytes);return;
+        }
+      }
       const projectTheme=path.match(/^\/v1\/projects\/([^/]+)\/theme$/);
       if(projectTheme&&request.method==='POST'){
         const input=z.object({themeBundleId:Id}).strict().parse(await body(request));return reply(200,await themes.setProjectDefault(owner,Id.parse(projectTheme[1]),input.themeBundleId));

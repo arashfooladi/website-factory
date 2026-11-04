@@ -110,11 +110,14 @@ export class Environments {
     const secret = JSON.parse(await readFile(join(this.directory(row.id), 'private.json'), 'utf8'));
     return { username: 'client_admin', password: secret.adminPassword };
   }
-  async request(owner: string, id: string, action: Exclude<EnvironmentAction, 'create'>, snapshotId?: string) {
+  async request(owner: string, id: string, action: Exclude<EnvironmentAction, 'create'>, snapshotId?: string, internal?:{visualReviewId:string}) {
     await this.owned(owner, id);
     return transaction(this.controller.pool, async client => {
       const row: EnvironmentRow = (await client.query('SELECT * FROM factory.environments WHERE id=$1 FOR UPDATE', [id])).rows[0];
       if (row.current_operation_id) throw new ControllerError('environment_busy');
+      const review=await client.query(`SELECT v.id,v.qa_environment_id FROM factory.visual_reviews v JOIN factory.agent_runs r ON r.id=v.candidate_run_id
+        WHERE (r.environment_id=$1 OR v.qa_environment_id=$1) AND v.status IN ('queued','running','cancelling')`,[row.id]);
+      if(review.rows.some(v=>v.id!==internal?.visualReviewId||v.qa_environment_id!==row.id))throw new ControllerError('visual_review_active');
       const agent=await client.query("SELECT 1 FROM factory.agent_runs WHERE environment_id=$1 AND status IN ('queued','running','cancelling')",[row.id]);
       if(agent.rowCount)throw new ControllerError('agent_run_active');
       if (row.status === 'deleted') throw new ControllerError('environment_deleted');

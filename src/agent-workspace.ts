@@ -8,6 +8,10 @@ import type { Environments } from './environments.js';
 import type { AgentArtifacts } from './agent-artifacts.js';
 
 const exec=promisify(execFile);
+export function assertCandidateSource(before:string,after:string,expected?:string|null){
+  if(expected&&(before!==expected||after!==expected))throw new Error('existing_source_changed');
+  if(before===after&&!expected)throw new Error('no_source_change');
+}
 const FilePath=z.string().max(500).refine(value=>/^(child|parent)\//.test(value)&&value.split('/').slice(1).every(part=>part&&!['.','..','.git','.codex'].includes(part)),'theme_path_required');
 export const ReadFileInput=z.object({path:FilePath}).strict();
 export const EditFileInput=z.object({path:FilePath,content:z.string().max(262144)}).strict();

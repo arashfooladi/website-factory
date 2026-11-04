@@ -10,7 +10,7 @@ import { Environments } from './environments.js';
 import { AgentInput,AgentLimits,type AgentRequest,type ProviderAdapter,type ProviderOutcome } from './agent-contracts.js';
 import { AgentArtifacts } from './agent-artifacts.js';
 import { AgentBrowser } from './agent-browser.js';
-import { AgentWorkspace,commitCandidate } from './agent-workspace.js';
+import { AgentWorkspace,commitCandidate,assertCandidateSource } from './agent-workspace.js';
 import { AgentTools } from './agent-tools.js';
 import { CodexAdapter } from './codex-adapter.js';
 import {AgentReference} from './agent-reference.js';
@@ -81,6 +81,7 @@ export class Agents {
         if(!environment)throw new ControllerError('not_found',404);
         if(input.projectId&&input.projectId!==environment.project_id)throw new ControllerError('project_environment_mismatch');
         if(environment.status!=='running'||environment.current_operation_id)throw new ControllerError('environment_not_running');
+        if((await client.query("SELECT 1 FROM factory.visual_reviews v JOIN factory.agent_runs r ON r.id=v.candidate_run_id WHERE (r.environment_id=$1 OR v.qa_environment_id=$1) AND v.status IN ('queued','running','cancelling')",[environment.id])).rowCount)throw new ControllerError('visual_review_active');
         projectId=environment.project_id;
       }else{
         const project=(await client.query('SELECT * FROM factory.projects WHERE id=$1 AND owner_id=$2 FOR UPDATE',[input.projectId,owner])).rows[0];
@@ -108,9 +109,9 @@ export class Agents {
       }
       const id=randomUUID(),session=parent?.session_key??randomUUID();
       await client.query(`INSERT INTO factory.agent_runs(id,project_id,environment_id,parent_run_id,session_key,provider,model,role,prompt,status,
-        instructions_sha256,skill_versions,limits,provider_session_id,intake_id,input_design_id,design_profile_id,build_id,build_step) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'queued',$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+        instructions_sha256,skill_versions,limits,provider_session_id,intake_id,input_design_id,design_profile_id,build_id,build_step,publish_source_sha256) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'queued',$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
       [id,projectId,environment?.id??null,parent?.id??null,session,this.adapter.name,this.config.codexModel,input.role,input.prompt,
-        loaded.instructionsHash,loaded.skillVersions,input.limits,parent?.provider_session_id??null,input.intakeId??null,input.designId??null,profile?.id??null,internal?.buildId??null,internal?.step??null]);
+        loaded.instructionsHash,loaded.skillVersions,input.limits,parent?.provider_session_id??null,input.intakeId??null,input.designId??null,profile?.id??null,internal?.buildId??null,internal?.step??null,input.publishExistingSourceSha256??null]);
       await this.controller.boss.send(QUEUE,{runId:id},{db:{executeSql:(text,values)=>client.query(text,values)}});
       return{id,status:'queued',releaseEligible:false};
     });
@@ -219,6 +220,7 @@ export class Agents {
         browser=new AgentBrowser(`http://127.0.0.1:${environment.preview_port}`,secret.previewToken,artifacts,abort.signal);
         await this.event(id,attempt,'browser_started',{browserId:browser.id});await browser.open();
         workspace=new AgentWorkspace(this.environments,row.environment_id);before=await workspace.export();
+        if(row.publish_source_sha256&&before.sha256!==row.publish_source_sha256)throw new Error('existing_source_changed');
       }
       const reference=row.intake_id?await new AgentReference(this.controller,row.project_id,row.intake_id,row.skill_versions.selection??this.config.skillsetVersion).open():undefined;
       design=row.role==='designer'&&reference?new DesignSubmission(reference,artifacts):undefined;
@@ -252,7 +254,7 @@ export class Agents {
         if(workspace&&browser){
           const checked=await workspace.call('check');if(!checked.valid)throw new Error('candidate_syntax_invalid');
           const source=await workspace.export();
-          if(row.role==='builder'&&source.sha256===before?.sha256)throw new Error('no_source_change');
+          if(row.role==='builder')assertCandidateSource(before!.sha256,source.sha256,row.publish_source_sha256);
           if(row.role==='builder')candidate=await commitCandidate(join(this.directory(id),'candidate'),source,artifacts);
           const final=await browser.act({action:'navigate',path:'/'});
           if(browser.httpStatus!==200)throw new Error('candidate_preview_failed');

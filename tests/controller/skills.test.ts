@@ -23,3 +23,12 @@ test('the actual heydamir Unslop pack includes its ordered passes, references, a
   await assert.rejects(readDesignPackResource('v2','unslop','../../src/config.ts'),/design_pack_resource_denied/);
   await assert.rejects(readDesignPackResource('v2','unslop','scripts/snapshot.mjs'),/design_pack_resource_denied/);
 });
+test('vision review can index verified optional packs without changing builder loading or the protected rubric',async()=>{
+ const full=await loadAgentInstructions('visual_reviewer','v2'),indexed=await loadAgentInstructions('visual_reviewer','v2',undefined,undefined,{indexReviewPacks:true});
+ assert(indexed.instructions.length<full.instructions.length/2);
+ assert.equal(indexed.skillVersions.visual_pack_materialization,'indexed-v1');
+ for(const [key,value]of Object.entries(full.skillVersions))assert.equal(indexed.skillVersions[key],value);
+ assert.match(indexed.instructions,/Match axes preserve measured reference decisions/);assert.match(indexed.instructions,/do not claim unread material was applied/);
+ assert.match(indexed.instructions,/packId unslop/);
+ const builder=await loadAgentInstructions('builder','v2',undefined,undefined,{indexReviewPacks:true});assert.equal(builder.skillVersions.visual_pack_materialization,undefined);assert(builder.instructions.includes('## 9. Motion'));
+});

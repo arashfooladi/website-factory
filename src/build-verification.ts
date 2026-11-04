@@ -7,14 +7,16 @@ import {AgentBrowser} from './agent-browser.js';
 import {AgentArtifacts} from './agent-artifacts.js';
 import {AgentWorkspace} from './agent-workspace.js';
 
+export const BUILD_RUNTIME_PROBE=`require_once ABSPATH.'wp-admin/includes/plugin.php';$m=get_option('factory_build_manifest');$products=array();
+    foreach($m['products'] as $item){$p=wc_get_product($item['id']);$products[]=array('id'=>$p->get_id(),'name'=>$p->get_name(),'type'=>$p->get_type(),'price'=>$p->get_price(),'stock'=>$p->get_stock_quantity(),'imageId'=>(int)$p->get_image_id());}
+    echo wp_json_encode(array('buildId'=>get_option('factory_build_id'),'title'=>get_option('blogname'),'products'=>$products,
+      'admin'=>user_can(get_user_by('login','client_admin'),'manage_woocommerce'),'editorOverrides'=>count(get_posts(array('post_type'=>array('wp_template','wp_template_part'),'post_status'=>'any','numberposts'=>-1))),
+      'template'=>get_template(),'child'=>get_stylesheet(),'woocommerce'=>is_plugin_active('woocommerce/woocommerce.php')));`;
+
 export async function verifyBuild(environments:Environments,environmentId:string,input:BuildRequest,manifest:any,sourceDigest:string,artifacts:AgentArtifacts,
   signal:AbortSignal,features:string[],onBrowser:(id:string)=>Promise<void>){
   const exported=await new AgentWorkspace(environments,environmentId).export();if(exported.sha256!==sourceDigest)throw new Error('build_source_changed');
-  const result=await environments.runtime('exec',environmentId,['/tools/php','/tools/wp-cli.phar','--path=/site','eval',`require_once ABSPATH.'wp-admin/includes/plugin.php';$m=get_option('factory_build_manifest');$products=array();
-    foreach($m['products'] as $item){$p=wc_get_product($item['id']);$products[]=array('id'=>$p->get_id(),'name'=>$p->get_name(),'type'=>$p->get_type(),'price'=>$p->get_price(),'stock'=>$p->get_stock_quantity(),'imageId'=>$p->get_image_id());}
-    echo wp_json_encode(array('buildId'=>get_option('factory_build_id'),'title'=>get_option('blogname'),'products'=>$products,
-      'admin'=>user_can(get_user_by('login','client_admin'),'manage_woocommerce'),'editorOverrides'=>count(get_posts(array('post_type'=>array('wp_template','wp_template_part'),'post_status'=>'any','numberposts'=>-1))),
-      'template'=>get_template(),'child'=>get_stylesheet(),'woocommerce'=>is_plugin_active('woocommerce/woocommerce.php'))));`]);
+  const result=await environments.runtime('exec',environmentId,['/tools/php','/tools/wp-cli.phar','--path=/site','eval',BUILD_RUNTIME_PROBE]);
   const runtime=JSON.parse(result.stdout);
   expect(runtime).toMatchObject({buildId:manifest.buildId,title:input.content.siteTitle,admin:true,editorOverrides:0,template:'maintheme',child:'client-child',woocommerce:true});
   expect(runtime.products).toHaveLength(input.content.products.length);

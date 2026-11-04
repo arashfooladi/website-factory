@@ -23,7 +23,7 @@ export async function readDesignPackResource(selection:string,packId:string,file
   return{bytes,metadata:{packId,name:pack.name,version:pack.version,file,sha256:reference.sha256,
     mediaType:file.endsWith('.webp')?'image/webp':file.endsWith('.png')?'image/png':'text/markdown'}};
 }
-export async function loadAgentInstructions(role:z.infer<typeof AgentRole>,selection='v2',preferences?:{skillPacks?:string[];quality?:string},profile?:AssignedDesignProfile|null){
+export async function loadAgentInstructions(role:z.infer<typeof AgentRole>,selection='v2',preferences?:{skillPacks?:string[];quality?:string},profile?:AssignedDesignProfile|null,options?:{indexReviewPacks?:boolean}){
   if(!/^v\d+$/.test(selection))throw new Error('skillset_version_invalid');
   const root=await realpath(resolve('skills'));
   const manifestText=await readFile(resolve(root,`manifest.${selection}.json`),'utf8');
@@ -32,6 +32,8 @@ export async function loadAgentInstructions(role:z.infer<typeof AgentRole>,selec
   const versions:Record<string,string>={selection,factory_agent:manifest.baseInstructions.match(/v(\d+)/)![1]!,factory_agent_sha256:sha256(base),browser_observation:manifest.browserObservationVersion,factory_skillset:manifest.version,
     factory_skillset_sha256:sha256(manifestText)};
   const parts=[base,`Assigned role: ${role}. The following protected skill instructions apply to this task.`];
+  const indexed=role==='visual_reviewer'&&options?.indexReviewPacks===true;
+  if(indexed)versions.visual_pack_materialization='indexed-v1';
   for(const relative of manifest.roles[role]){
     const file=await realpath(resolve(root,relative));if(!file.startsWith(root+sep))throw new Error('skill_path_denied');
     const source=await readFile(file,'utf8');
@@ -45,11 +47,11 @@ export async function loadAgentInstructions(role:z.infer<typeof AgentRole>,selec
     const file=await realpath(resolve(root,pack.path));if(!file.startsWith(root+sep))throw new Error('skill_path_denied');
     const source=await readFile(file,'utf8');if(sha256(source)!==pack.sha256)throw new Error('skill_content_hash_mismatch');
     versions[pack.name]=pack.version;versions[pack.name+'_sha256']=pack.sha256;
-    parts.push(`\n## Optional design pack ${pack.name} ${pack.version}\nFactory scope and the client's resolved fidelity settings take precedence over default aesthetic advice. Use the supplied brief in this unattended workflow; do not create extra approval rounds or use unavailable host tools.\n${source}`);
+    parts.push(indexed?`\n## Selected design pack ${pack.name} ${pack.version} (indexed)\nIts source and resources were hash-verified and remain available through factory_reference action design_pack with packId ${id}. Read relevant sections when needed; do not claim unread material was applied. The protected factory design rubric and client direction govern the review. Respect matched axes and do not impose generic pack aesthetics on the client.`:`\n## Optional design pack ${pack.name} ${pack.version}\nFactory scope and the client's resolved fidelity settings take precedence over default aesthetic advice. Use the supplied brief in this unattended workflow; do not create extra approval rounds or use unavailable host tools.\n${source}`);
     for(const reference of pack.references??[]){
       const bytes=await protectedSkillResource(root,join(dirname(pack.path),reference.file),reference.sha256);
       versions[pack.name+'_'+reference.file.replace(/[^a-z0-9]+/g,'_')+'_sha256']=reference.sha256;
-      if(reference.inline)parts.push(`\n### ${pack.name}/${reference.file}\n${bytes.toString('utf8')}`);
+      if(reference.inline&&!indexed)parts.push(`\n### ${pack.name}/${reference.file}\n${bytes.toString('utf8')}`);
     }
     if(pack.integration)parts.push(`\n### Factory integration rules for ${pack.name}\n${pack.integration}`);
   }

@@ -28,6 +28,11 @@ async function main() {
   let path = '/v1/health';
   let payload: unknown;
   switch (command) {
+    case 'visual:create':
+      if(!values.file)throw new Error('visual:create requires --file');
+      path='/v1/visual-reviews';method='POST';payload=JSON.parse(await readFile(values.file,'utf8'));break;
+    case 'visual':path=`/v1/visual-reviews/${values.id}`;break;
+    case 'visual:cancel':path=`/v1/visual-reviews/${values.id}/cancel`;method='POST';break;
     case 'project:theme':
       if(!values.project||!values.theme)throw new Error('project:theme requires --project and --theme');
       path=`/v1/projects/${values.project}/theme`;method='POST';payload={themeBundleId:values.theme};break;
@@ -86,7 +91,7 @@ async function main() {
       if (!values.file) throw new Error('resume requires --file with explicit limits');
       method = 'POST'; path = `/v1/jobs/${values.id}/resume`;
       payload = { limits: JSON.parse(await readFile(values.file, 'utf8')) }; break;
-    default: throw new Error('Commands: health, projects, project:create, job:create, job, cancel, resume, env:create, env, env:start, env:stop, env:snapshot, env:restore, env:destroy, env:credentials, env:probe, agent:create, agent, agent:cancel, agent:resume, intake:create, intake, intake:cancel, asset:upload');
+    default: throw new Error('Commands: health, projects, project:create, job:create, job, cancel, resume, env:create, env, env:start, env:stop, env:snapshot, env:restore, env:destroy, env:credentials, env:probe, agent:create, agent, agent:cancel, agent:resume, intake:create, intake, intake:cancel, asset:upload, visual:create, visual, visual:cancel');
   }
   const response = await fetch(`http://${config.host === '::1' ? '[::1]' : config.host}:${config.port}${path}`, {
     method, headers: { Authorization: `Bearer ${config.apiToken}`, 'Content-Type': 'application/json' },

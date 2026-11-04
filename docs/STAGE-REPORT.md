@@ -1,5 +1,7 @@
 # Current stage — Part 7 in progress
 
+Historical GitHub checkpoint from 2026-11-02. See [PROGRESS.md](PROGRESS.md) and [the Part 7 report](PART-7-REPORT.md) for subsequent local work.
+
 Checkpoint requested on 2026-11-02 because the operator's hourly Codex quota is at 5%. Stop provider-consuming work here. Source repository: https://github.com/arashfooladi/website-factory (private).
 
 | Stage | Actual status |

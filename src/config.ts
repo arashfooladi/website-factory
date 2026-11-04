@@ -21,6 +21,7 @@ const Schema = z.object({
   themeRoot:z.string().default('.runtime/themes'),
   designRoot:z.string().default('.runtime/design'),
   buildRoot:z.string().default('.runtime/builds'),
+  visualRoot:z.string().default('.runtime/visual'),
   skillsetVersion:z.string().regex(/^v\d+$/).default('v2'),
   codexModel:z.string().regex(/^[a-zA-Z0-9._-]{1,120}$/).default('gpt-6.1-sol'),
   codexBinary:z.string().optional(),
@@ -36,6 +37,7 @@ export function parseConfig(raw: unknown): Config {
   config.themeRoot=resolve(config.themeRoot);
   config.designRoot=resolve(config.designRoot);
   config.buildRoot=resolve(config.buildRoot);
+  config.visualRoot=resolve(config.visualRoot);
   config.codexCredentialFile=resolve(config.codexCredentialFile);
   if(config.codexBinary)config.codexBinary=resolve(config.codexBinary);
   return config;

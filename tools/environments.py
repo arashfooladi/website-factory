@@ -208,9 +208,9 @@ def sandbox(path, data, args, profile='website'):
             '--ro-bind', cache / 'woocommerce', '/site/wp-content/plugins/woocommerce',
             '--ro-bind', cache / 'languages', '/site/wp-content/languages',
             '--ro-bind', ROOT / 'sandbox/environment-guard.php', '/site/wp-content/mu-plugins/fixture-guard.php',
-            '--bind', path / 'workspace', '/workspace',
-            '--bind', path / 'workspace/child-theme', '/site/wp-content/themes/client-child',
-            '--bind', path / 'uploads', '/site/wp-content/uploads', '--bind', path / 'cache', '/site/wp-content/cache',
+            '--ro-bind' if data.get('visualClone') else '--bind', path / 'workspace', '/workspace',
+            '--ro-bind' if data.get('visualClone') else '--bind', path / 'workspace/child-theme', '/site/wp-content/themes/client-child',
+            '--ro-bind' if data.get('visualClone') else '--bind', path / 'uploads', '/site/wp-content/uploads', '--bind', path / 'cache', '/site/wp-content/cache',
             '--bind', path / 'data', '/data', '--bind', path / 'run', '/run', '--bind', path / 'logs', '/logs', '--chdir', '/workspace']
     else:
         command += ['--bind', path / 'reference', '/reference', '--dir', '/run', '--dir', '/logs', '--chdir', '/reference']
@@ -298,6 +298,69 @@ def hashes(path):
             result[item.relative_to(path).as_posix()] = digest.hexdigest()
     return result
 
+def clone_visual(path, data, payload):
+    """Copy a logical DB snapshot and pinned presentation into a fresh private environment."""
+    source_id = identity(payload['sourceEnvironmentId'])
+    source_path = location(source_id)
+    if source_id == data['id']: raise ValueError('visual_clone_self_rejected')
+    source = metadata(source_path)
+    if source['projectId'] != data['projectId'] or source.get('themeBundle') != data.get('themeBundle'):
+        raise ValueError('visual_clone_scope_mismatch')
+    if data.get('initialized') or data.get('visualClone'):
+        raise ValueError('visual_clone_requires_fresh_environment')
+    if subprocess.run(['systemctl', '--user', 'is-active', '--quiet', unit(source)]).returncode:
+        raise ValueError('visual_clone_source_not_running')
+    if subprocess.run(['systemctl', '--user', 'is-active', '--quiet', slice_name(data)]).returncode == 0:
+        raise ValueError('visual_clone_target_not_stopped')
+    child = source_path / 'workspace/child-theme'
+    child_hashes = hashes(child)
+    digest = hashlib.sha256(json.dumps(child_hashes, sort_keys=True).encode()).hexdigest()
+    if digest != payload['sourceDigest']: raise ValueError('visual_candidate_changed')
+    uploads_hashes = hashes(source_path / 'uploads')
+    if usage(source_path)['bytes'] > data['limits']['diskMiB'] * 1024 * 1024:
+        raise ValueError('visual_clone_disk_budget_exceeded')
+    dump_name = 'visual-' + uuid.uuid4().hex + '.sql'
+    dump = source_path / 'run' / dump_name
+    target_dump = path / 'cache' / dump_name
+    try:
+        database = 'site_' + source_id.replace('-', '')
+        nontransactional = execute(source_path, source, ['/runtime/bin/mariadb', '--no-defaults', '--socket=/run/mysql.sock', '-uroot',
+            '--batch', '--skip-column-names', '-e', "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='" + database + "' AND ENGINE <> 'InnoDB'"])
+        if nontransactional.strip(): raise ValueError('visual_clone_transactional_tables_required')
+        execute(source_path, source, ['/runtime/bin/mariadb-dump', '--no-defaults', '--socket=/run/mysql.sock', '-uroot',
+            '--single-transaction', '--quick', '--skip-lock-tables', '--skip-comments', '--hex-blob',
+            '--result-file=/run/' + dump_name, database])
+        if dump.is_symlink() or not dump.is_file(): raise ValueError('visual_clone_dump_invalid')
+        dump.chmod(0o600)
+        if dump.stat().st_size > data['limits']['fileSizeMiB'] * 1024 * 1024:
+            raise ValueError('visual_clone_dump_budget_exceeded')
+        dump_digest = hashlib.sha256(dump.read_bytes()).hexdigest()
+        shutil.copyfile(dump, target_dump); target_dump.chmod(0o600)
+        # Bootstrap only the fresh target; imported content never re-seeds the source.
+        start(path, data)
+        wp = ['/tools/php', '/tools/wp-cli.phar', '--path=/site']
+        execute(path, data, wp + ['db', 'import', '/site/wp-content/cache/' + dump_name])
+        execute(path, data, wp + ['search-replace', f'http://127.0.0.1:{source["port"]}',
+            f'http://127.0.0.1:{data["port"]}', '--all-tables-with-prefix', '--precise', '--quiet'])
+        execute(path, data, wp + ['eval-file', '/tools/visual-clone.php'], stdin=json.dumps({
+            'sourceEnvironmentId':source_id, 'environmentId':data['id'], 'adminPassword':data['adminPassword']}))
+        stop(data)
+        shutil.rmtree(path / 'workspace/child-theme')
+        shutil.copytree(child, path / 'workspace/child-theme')
+        shutil.rmtree(path / 'uploads'); shutil.copytree(source_path / 'uploads', path / 'uploads')
+        if hashes(child) != child_hashes or hashes(path / 'workspace/child-theme') != child_hashes:
+            raise ValueError('visual_candidate_changed')
+        if hashes(source_path / 'uploads') != uploads_hashes or hashes(path / 'uploads') != uploads_hashes:
+            raise ValueError('visual_clone_uploads_changed')
+        provenance = {'sourceEnvironmentId':source_id, 'sourceDigest':digest, 'databaseDumpSha256':dump_digest,
+            'uploadsSha256':hashlib.sha256(json.dumps(uploads_hashes,sort_keys=True).encode()).hexdigest()}
+        data['visualClone'] = provenance
+        save(path, data)
+        return provenance
+    finally:
+        dump.unlink(missing_ok=True); target_dump.unlink(missing_ok=True)
+        stop(data)
+
 def snapshot(path, data, snapshot_id):
     if subprocess.run(['systemctl', '--user', 'is-active', '--quiet', slice_name(data)]).returncode == 0:
         raise ValueError('snapshot_requires_stopped_environment')
@@ -343,7 +406,7 @@ def restore(path, data, snapshot_id):
 def main():
     global ACTIVE_ID, PRIVATE
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['create','start','stop','status','destroy','snapshot','restore','probe','exec'])
+    parser.add_argument('action', choices=['create','start','stop','status','destroy','snapshot','restore','clone-visual','probe','exec'])
     parser.add_argument('environment_id')
     parser.add_argument('extra', nargs=argparse.REMAINDER)
     args = parser.parse_args()
@@ -369,6 +432,7 @@ def main():
             elif args.action == 'status': result = status(path, data)
             elif args.action == 'snapshot': result = snapshot(path, data, args.extra[0])
             elif args.action == 'restore': result = restore(path, data, args.extra[0])
+            elif args.action == 'clone-visual': result = clone_visual(path, data, json.load(sys.stdin))
             elif args.action == 'probe': result = json.loads(execute(path, data, ['/usr/bin/python3', '/tools/probe.py'], profile=args.extra[0] if args.extra else 'website'))
             elif args.action == 'exec': result = {'stdout': execute(path, data, args.extra, stdin=sys.stdin.read())}
             else:

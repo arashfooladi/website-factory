@@ -1,12 +1,12 @@
 # Website Factory
 
-Latest checkpoint: [current stage report](docs/STAGE-REPORT.md). Part 7 remains in progress; full-site acceptance has not passed.
+Published checkpoint: [stage report](docs/STAGE-REPORT.md). Subsequent local work reached the [Part 7 prototype milestone](docs/PART-7-REPORT.md); independent QA is now in progress. See [current progress](docs/PROGRESS.md) for limits and pending work.
 
 Current development also includes [editable design modes and strict skill packs](docs/CUSTOMIZATION.md), including [heydamir/unslop](https://github.com/heydamir/unslop), a [versioned MainTheme update library](docs/THEME-UPDATES.md), and the [automatic WordPress prototype build API](docs/BUILD-AUTOMATION.md). See [actual progress and remaining acceptance work](docs/PROGRESS.md) before treating the whole-site pipeline as complete.
 
 A private server application for producing complete client websites from a reference URL and brief. WordPress with MainTheme is the first output profile. The client receives a finished website and uses standard WordPress/WooCommerce administration for products and orders.
 
-**Working development checkpoint:** Parts 1–6 are implemented: a certified MainTheme baseline, durable controller, isolated WordPress environments, a real Codex agent, reference intake/capture and versioned design/MainTheme skills. The AI inspects paired screenshots, HTML/CSS/layout evidence and recorded flows, then produces a protected design plan. Part 7's build API, content/media setup, customization and theme-update library are implemented, but its complete-site pilot remains unfinished. Independent QA, client export/restore and the dashboard are later parts. See [the checkpoint and resume guide](docs/CHECKPOINT.md).
+**Working development checkpoint:** Parts 1–6 are implemented: a certified MainTheme baseline, durable controller, isolated WordPress environments, a real Codex agent, reference intake/capture and versioned design/MainTheme skills. The AI inspects paired screenshots, HTML/CSS/layout evidence and recorded flows, then produces a protected design plan. Part 7 now has a verified first prototype and traceable candidate after operator-assisted recovery, plus its build API, content/media setup, customization and theme-update library. Independent visual QA now has an owned review API/queue, evidence-bound vision assessment, isolated candidate-data previews, breakpoint sweeps and synthetic Persian/RTL content stress; visual reference-policy benchmarks pass; a complete prototype assessment and accepted-baseline regression comparison remain pending. Full functional/admin QA, client export/restore and the dashboard remain later parts. See [the checkpoint and resume guide](docs/CHECKPOINT.md).
 
 - [Numbered build order](docs/BUILD-ORDER.md)
 - [Progress and verification](docs/PROGRESS.md)

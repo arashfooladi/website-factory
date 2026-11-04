@@ -13,12 +13,14 @@ export const AgentInput = z.object({
   projectId:Id.optional(),
   intakeId:Id.optional(),
   designId:Id.optional(),
+  publishExistingSourceSha256:z.string().regex(/^[a-f0-9]{64}$/).optional(),
   role:AgentRole.default('builder'),
   prompt:z.string().trim().min(1).max(16_000),
   limits:AgentLimits.prefault({}),
 }).strict().superRefine((task,context)=>{
   if(!task.environmentId&&(!task.projectId||!task.intakeId||!['analyst','designer'].includes(task.role)))context.addIssue({code:'custom',message:'environment_or_reference_project_required'});
   if(task.role==='designer'&&!task.intakeId)context.addIssue({code:'custom',message:'design_requires_intake'});
+  if(task.publishExistingSourceSha256&&(task.role!=='builder'||!task.environmentId||!task.designId))context.addIssue({code:'custom',message:'existing_source_publication_requires_bound_builder_design'});
 });
 export type AgentBudget = z.infer<typeof AgentLimits>;
 export type AgentRequest = z.infer<typeof AgentInput>;
