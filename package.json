@@ -62,7 +62,10 @@
     "test:visual-fidelity-agent": "tsx --test tests/controller/visual-fidelity-agent.test.ts",
     "pilot:visual": "tsx tools/run_visual_pilot.ts",
     "pilot:visual:replay": "tsx tools/replay_visual_route.ts",
-    "test:visual-reuse": "tsx --test tests/controller/visual-capture-reuse.test.ts"
+    "test:visual-reuse": "tsx --test tests/controller/visual-capture-reuse.test.ts",
+    "test:functional-qa": "tsx --test tests/controller/functional-qa.test.ts",
+    "test:admin-qa": "tsx --test tests/controller/admin-qa.test.ts",
+    "pilot:admin": "tsx tools/run_admin_pilot.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
