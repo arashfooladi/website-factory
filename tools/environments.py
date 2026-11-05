@@ -233,7 +233,7 @@ def execute(path, data, args, stdin=None, profile='website', timeout=120):
     finally:
         subprocess.run(['systemctl','--user','stop',command_unit],capture_output=True,timeout=15)
 
-def start(path, data):
+def start(path, data, *, initialize=True):
     configure_slice(data)
     active = subprocess.run(['systemctl', '--user', 'is-active', '--quiet', unit(data)]).returncode == 0
     if not active:
@@ -255,6 +255,7 @@ def start(path, data):
     database = 'site_' + data['id'].replace('-', '')
     sql = f"CREATE DATABASE IF NOT EXISTS `{database}` CHARACTER SET utf8mb4; CREATE USER IF NOT EXISTS 'factory'@'localhost' IDENTIFIED BY '{data['dbPassword']}'; GRANT ALL ON `{database}`.* TO 'factory'@'localhost';"
     execute(path, data, ['/runtime/bin/mariadb', '--no-defaults', '--socket=/run/mysql.sock', '-uroot'], stdin=sql)
+    if not initialize: return {'running': True}
     bootstrap = {key: data[key] for key in ['id', 'projectId', 'adminPassword', 'initialized']}
     execute(path, data, ['/usr/bin/python3', '/tools/bootstrap.py'], stdin=json.dumps(bootstrap), timeout=240)
     data['initialized'] = True
@@ -338,10 +339,10 @@ def clone_visual(path, data, payload):
             raise ValueError('visual_clone_dump_budget_exceeded')
         dump_digest = hashlib.sha256(dump.read_bytes()).hexdigest()
         shutil.copyfile(dump, target_dump); target_dump.chmod(0o600)
-        # Bootstrap only the fresh target; imported content never re-seeds the source.
-        start(path, data)
+        # The imported database supplies WordPress. Do not install/activate/seed a throwaway site first.
+        start(path, data, initialize=False)
         wp = ['/tools/php', '/tools/wp-cli.phar', '--path=/site']
-        execute(path, data, wp + ['db', 'import', '/site/wp-content/cache/' + dump_name])
+        execute(path, data, wp + ['db', 'import', '/site/wp-content/cache/' + dump_name], timeout=240)
         execute(path, data, wp + ['search-replace', f'http://127.0.0.1:{source["port"]}',
             f'http://127.0.0.1:{data["port"]}', '--all-tables-with-prefix', '--precise', '--quiet'])
         execute(path, data, wp + ['eval-file', '/tools/visual-clone.php'], stdin=json.dumps({
@@ -356,6 +357,7 @@ def clone_visual(path, data, payload):
             raise ValueError('visual_clone_uploads_changed')
         provenance = {'sourceEnvironmentId':source_id, 'sourceDigest':digest, 'purpose':purpose, 'databaseDumpSha256':dump_digest,
             'uploadsSha256':hashlib.sha256(json.dumps(uploads_hashes,sort_keys=True).encode()).hexdigest()}
+        data['initialized'] = True
         data['visualClone'] = provenance
         save(path, data)
         return provenance

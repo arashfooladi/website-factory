@@ -59,6 +59,11 @@ async function main() {
     case 'intake:revise':
       if(!values.file)throw new Error('intake:revise requires --file');
       path=`/v1/intakes/${values.id}/revise`;method='POST';payload=JSON.parse(await readFile(values.file,'utf8'));break;
+    case 'functional:create':
+      if(!values.file)throw new Error('functional:create requires --file');
+      path='/v1/functional-reviews';method='POST';payload=JSON.parse(await readFile(values.file,'utf8'));break;
+    case 'functional':path=`/v1/functional-reviews/${values.id}`;break;
+    case 'functional:cancel':path=`/v1/functional-reviews/${values.id}/cancel`;method='POST';break;
     case 'agent:create':
       if(!values.file)throw new Error('agent:create requires --file');
       path='/v1/agent-runs';method='POST';payload=JSON.parse(await readFile(values.file,'utf8'));break;
@@ -91,7 +96,7 @@ async function main() {
       if (!values.file) throw new Error('resume requires --file with explicit limits');
       method = 'POST'; path = `/v1/jobs/${values.id}/resume`;
       payload = { limits: JSON.parse(await readFile(values.file, 'utf8')) }; break;
-    default: throw new Error('Commands: health, projects, project:create, job:create, job, cancel, resume, env:create, env, env:start, env:stop, env:snapshot, env:restore, env:destroy, env:credentials, env:probe, agent:create, agent, agent:cancel, agent:resume, intake:create, intake, intake:cancel, asset:upload, visual:create, visual, visual:cancel');
+    default: throw new Error('Commands: health, projects, project:create, job:create, job, cancel, resume, env:create, env, env:start, env:stop, env:snapshot, env:restore, env:destroy, env:credentials, env:probe, agent:create, agent, agent:cancel, agent:resume, intake:create, intake, intake:cancel, asset:upload, visual:create, visual, visual:cancel, functional:create, functional, functional:cancel');
   }
   const response = await fetch(`http://${config.host === '::1' ? '[::1]' : config.host}:${config.port}${path}`, {
     method, headers: { Authorization: `Bearer ${config.apiToken}`, 'Content-Type': 'application/json' },

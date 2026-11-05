@@ -35,7 +35,7 @@ export class FunctionalReviewJobs{
    if((await client.query("SELECT 1 FROM factory.functional_reviews v JOIN factory.agent_runs r ON r.id=v.candidate_run_id WHERE r.environment_id=$1 AND v.status IN ('queued','running','cancelling')",[candidate.environment_id])).rowCount)throw new ControllerError('functional_review_active');
    if((await client.query("SELECT 1 FROM factory.functional_reviews WHERE candidate_run_id=$1 AND status IN ('queued','running','cancelling')",[candidate.id])).rowCount)throw new ControllerError('functional_review_active');
    const id=randomUUID();await client.query(`INSERT INTO factory.functional_reviews(id,project_id,candidate_run_id,candidate_revision,source_digest,storage_key,status,input,input_sha256,provider,model)
-    VALUES($1,$2,$3,$4,$5,$6,'queued',$7,$8,$9,$10)`,[id,candidate.project_id,candidate.id,candidate.candidate_revision,candidate.source_digest,this.key,input,sha256(canonicalJson(input)),this.processor.provider,this.controller.config.codexModel]);
+    VALUES($1,$2,$3,$4,$5,$6,'queued',$7,$8,$9,$10)`,[id,candidate.project_id,candidate.id,candidate.candidate_revision,candidate.source_digest,this.key,input,sha256(canonicalJson(input)),this.processor.provider,'protected-browser-v1']);
    await this.controller.boss.send(this.queue,{id},{db:{executeSql:(text,values)=>client.query(text,values)}});return{id,status:'queued',releaseEligible:false};
   });
  }
@@ -71,7 +71,7 @@ export class FunctionalReviewJobs{
   let report:unknown,status='needs_review',reason:string|null=null;
   try{
    if(sha256(canonicalJson(row.input))!==row.input_sha256)throw new Error('functional_input_changed');
-   if(row.provider!==this.processor.provider||row.model!==this.controller.config.codexModel)throw new Error('functional_provider_changed');
+   if(row.provider!==this.processor.provider||row.model!=='protected-browser-v1')throw new Error('functional_provider_changed');
    report=await this.processor.run(row,artifacts,abort.signal,usage,async(type,data)=>{
     abort.signal.throwIfAborted();await transaction(this.controller.pool,async client=>{
      const valid=await client.query("SELECT id FROM factory.functional_reviews WHERE id=$1 AND attempt_id=$2 AND status='running' AND lease_expires_at>clock_timestamp() AND deadline_at>clock_timestamp() FOR UPDATE",[id,attempt]);if(!valid.rowCount)throw new Error('functional_authority_revoked');

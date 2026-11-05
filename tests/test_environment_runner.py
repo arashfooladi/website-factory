@@ -25,6 +25,26 @@ class EnvironmentRunnerTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'qa_clone_purpose_invalid'):
                 environments.clone_visual(Path('/qa'),{}, {'purpose':'production'})
 
+    def test_clone_database_start_does_not_install_or_seed_wordpress(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'run').mkdir()
+            (root / 'run/preview.sock').touch()
+            data = {'id':'a4c053c4-644e-458c-bc96-4296bbb1aa19', 'projectId':'16143b0c-ea5e-4657-bc2c-5a1a4f73819c',
+                    'dbPassword':'fixture', 'adminPassword':'fixture', 'initialized':False}
+            calls = []
+            def execute(path, metadata, args, **kwargs): calls.append(args); return ''
+            with patch.object(environments,'configure_slice'), patch.object(environments.subprocess,'run',return_value=SimpleNamespace(returncode=0)), patch.object(environments,'execute',side_effect=execute), patch.object(environments,'save') as save:
+                environments.start(root,data,initialize=False)
+                self.assertFalse(data['initialized'])
+                save.assert_not_called()
+                self.assertEqual(len(calls),1)
+                self.assertEqual(calls[0][0],'/runtime/bin/mariadb')
+                environments.start(root,data)
+                self.assertTrue(data['initialized'])
+                self.assertEqual(calls[-1],['/usr/bin/python3','/tools/bootstrap.py'])
+                save.assert_called_once()
+
     def test_non_uuid_paths_are_rejected(self):
         for value in ['../../controller', '/etc', 'client-name']:
             with self.assertRaises(ValueError): environments.location(value)

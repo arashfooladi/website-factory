@@ -1,4 +1,6 @@
 import {randomUUID} from 'node:crypto';
+import {submitWooAction} from './admin-actions.js';
+import {loginClientAdmin} from './admin-login.js';
 import {PNG} from 'pngjs';
 import {readFile,open} from 'node:fs/promises';
 import {constants} from 'node:fs';
@@ -22,16 +24,14 @@ export async function checkAdminProduct(environments:Environments,owner:string,e
  const sku='factory-qa-'+randomUUID(),title='محصول آزمایشی سطر '+sku.slice(-8),updated=title+' ویرایش‌شده',evidence:any[]=[];
  const origin=`http://127.0.0.1:${state.preview_port}`,credentials=await environments.credentials(owner,environmentId);
  let browser=new AgentBrowser(origin,secret.previewToken,artifacts,signal);
- const oracle=async(action:'inspect'|'cleanup')=>JSON.parse((await environments.runtime('exec',environmentId,['/tools/php','/tools/wp-cli.phar','--path=/site','eval-file','/tools/admin-product-oracle.php'],{environmentId,sku,action})).stdout);
+ const oracle=async(action:'inspect'|'cleanup')=>JSON.parse((await environments.runtime('exec',environmentId,['/tools/php','/tools/wp-cli.phar','--path=/site','--skip-themes','eval-file','/tools/admin-product-oracle.php'],{environmentId,sku,action})).stdout);
  const capture=async(step:string)=>{evidence.push({step,...await browser.capture()});};
  let reason:string|null=null,passed=false,cleanupVerified=false,phase='login',categoryId:number|undefined,imageId:number|undefined,finalProduct:any,editUrl='';
  try{
   await browser.open({width:1280,height:900});
   await browser.protectedPage(async page=>{
    page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(60000);
-   await page.goto(origin+'/wp-login.php',{waitUntil:'load'});
-   await page.locator('#user_login').fill(credentials.username);await page.locator('#user_pass').fill(credentials.password);
-   await page.locator('#wp-submit').click();await page.waitForURL(url=>url.pathname.startsWith('/wp-admin/'));await page.waitForLoadState('load');
+   await loginClientAdmin(page,origin,credentials);
    if(candidate.media){
     phase='media';await page.goto(origin+'/wp-admin/media-new.php?browser-uploader',{waitUntil:'load'});
     const fixture=new PNG({width:16,height:16});for(let i=0;i<fixture.data.length;i+=4){fixture.data[i]=32;fixture.data[i+1]=97;fixture.data[i+2]=130;fixture.data[i+3]=255;}const png=PNG.sync.write(fixture);
@@ -59,7 +59,7 @@ export async function checkAdminProduct(environments:Environments,owner:string,e
     await modal.locator('.media-button-select').click();await page.locator('#set-post-thumbnail img').waitFor();
    }
    if(categoryId){await page.locator('#product_cat-tabs a[href="#product_cat-all"]').click();await page.locator(`input[name="tax_input[product_cat][]"][value="${categoryId}"]`).check();}
-   await page.locator('a[href="#inventory_product_data"]').click();await page.locator('#_sku').fill(sku);await page.locator('#_manage_stock').check();await page.locator('#_stock').fill('8');
+   await page.locator('.product_data_tabs a[href="#inventory_product_data"]').click();await page.locator('#_sku').fill(sku);await page.locator('#_manage_stock').check();await page.locator('#_stock').fill('8');
    await page.locator('#_stock').blur();await page.waitForLoadState('load');await page.locator('#publish:not(.disabled):not([disabled])').click();await page.waitForURL(url=>url.pathname==='/wp-admin/post.php'&&url.searchParams.has('post'));await page.waitForLoadState('load');await capture('published');
    const initial=await oracle('inspect');
    if(!initial.canEdit||!initial.canPublish||initial.product?.name!==title||initial.product.status!=='publish'||Number(initial.product.price)!==123450||initial.product.stock!==8||!initial.product.managed)throw new Error('admin_qa_created_product_mismatch');
@@ -71,11 +71,10 @@ export async function checkAdminProduct(environments:Environments,owner:string,e
   await browser.close();browser=new AgentBrowser(origin,secret.previewToken,artifacts,signal);await browser.open({width:1280,height:900});
   await browser.protectedPage(async page=>{
    page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(60000);phase='edit_login';
-   await page.goto(origin+'/wp-login.php',{waitUntil:'load'});await page.locator('#user_login').fill(credentials.username);await page.locator('#user_pass').fill(credentials.password);
-   await page.locator('#wp-submit').click();await page.waitForURL(url=>url.pathname.startsWith('/wp-admin/'));
-   phase='edit';await page.goto(editUrl,{waitUntil:'load'});await page.locator('#title').fill(updated);
-   await page.locator('a[href="#general_product_data"]').click();await page.locator('#_regular_price').fill('456700');
-   await page.locator('a[href="#inventory_product_data"]').click();await page.locator('#_stock').fill('0');
+   await loginClientAdmin(page,origin,credentials,editUrl);
+   phase='edit';await page.locator('#title').fill(updated);
+   await page.locator('.product_data_tabs a[href="#general_product_data"]').click();await page.locator('#_regular_price').fill('456700');
+   await page.locator('.product_data_tabs a[href="#inventory_product_data"]').click();await page.locator('#_stock').fill('0');
    await page.locator('#_stock').blur();await page.waitForLoadState('load');await Promise.all([page.waitForNavigation({waitUntil:'load'}),page.locator('#publish:not(.disabled):not([disabled])').click()]);await capture('updated');
    const final=await oracle('inspect');
    if(final.product?.name!==updated||Number(final.product.price)!==456700||final.product.stock!==0||final.product.inStock!==false)throw new Error('admin_qa_updated_product_mismatch');
@@ -96,27 +95,29 @@ export async function checkAdminProduct(environments:Environments,owner:string,e
    await browser.close();browser=new AgentBrowser(origin,secret.previewToken,artifacts,signal);await browser.open({width:1280,height:900});
    await browser.protectedPage(async page=>{
     page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(60000);phase='variation_login';
-    await page.goto(origin+'/wp-login.php',{waitUntil:'load'});await page.locator('#user_login').fill(credentials.username);await page.locator('#user_pass').fill(credentials.password);
-    await page.locator('#wp-submit').click();await page.waitForURL(url=>url.pathname.startsWith('/wp-admin/'));
-    phase='variation_create';await page.goto(editUrl,{waitUntil:'load'});await page.locator('#product-type').selectOption('variable');
-    await page.locator('a[href="#inventory_product_data"]').click();await page.locator('#_manage_stock').uncheck();
-    await page.locator('a[href="#product_attributes"]').click();await page.locator('.add_custom_attribute').click();
-    const attr=page.locator('.woocommerce_attribute').last();await attr.locator('input.attribute_name').fill('اندازه');
-    await attr.locator('textarea').fill('کوچک | بزرگ');await attr.locator('input[name^="attribute_variation"]').check();
-    await page.locator('.save_attributes:not(.disabled)').click();await page.locator('.product_attributes .blockUI').waitFor({state:'hidden'});
+    await loginClientAdmin(page,origin,credentials,editUrl);
+    phase='variation_create';await page.locator('#product-type').selectOption('variable');
+    const tourClose=page.locator('.woocommerce-tour-kit-step-controls__close-btn');
+    if(await tourClose.waitFor({state:'visible',timeout:3000}).then(()=>true,()=>false))await tourClose.click();
+    phase='variation_inventory';
+    await page.locator('.product_data_tabs a[href="#inventory_product_data"]').click();await page.locator('#_manage_stock').uncheck();
+    phase='variation_attributes';await page.locator('.product_data_tabs a[href="#product_attributes"]').click();
+    const attr=page.locator('#product_attributes .woocommerce_attribute').first();await attr.waitFor();await attr.locator('input.attribute_name').fill('اندازه');
+    await attr.locator('textarea').fill('');await attr.locator('textarea').pressSequentially('کوچک | بزرگ');await attr.locator('textarea').blur();await attr.locator('input[name^="attribute_variation"]').check();
+    await submitWooAction(page,'.save_attributes:not(.disabled)','woocommerce_save_attributes');await page.locator('.product_attributes .blockUI.blockOverlay').waitFor({state:'hidden'});
     await Promise.all([page.waitForNavigation({waitUntil:'load'}),page.locator('#publish:not(.disabled):not([disabled])').click()]);
-    await page.locator('a[href="#variable_product_options"]').click();await page.locator('.add_variation_manually').click();
+    phase='variation_add';await page.locator('.product_data_tabs a[href="#variable_product_options"]').click();await submitWooAction(page,'.add_variation_manually','woocommerce_add_variation');
     const variation=page.locator('.woocommerce_variation').first();await variation.waitFor();
     await variation.locator('select[name^="attribute_"]').selectOption({label:'کوچک'});
     if(!await variation.locator('input[name^="variable_regular_price"]').isVisible())await variation.locator('h3').click();
-    await variation.locator('input[name^="variable_regular_price"]').fill('234500');
+    phase='variation_save';await variation.locator('input[name^="variable_regular_price"]').fill('234500');
     await variation.locator('input[name^="variable_manage_stock"]').check();await variation.locator('input[name^="variable_stock["]').fill('3');
-    await page.locator('.save-variation-changes').click();await page.locator('.woocommerce_variations .blockUI').waitFor({state:'hidden'});
+    await submitWooAction(page,'.save-variation-changes','woocommerce_save_variations');await page.locator('.woocommerce_variations .blockUI.blockOverlay').waitFor({state:'hidden'});
     await capture('variation-created');
     const created=await oracle('inspect'),v=created.product?.variations?.[0];
     if(created.product?.type!=='variable'||!v||Number(v.price)!==234500||v.stock!==3||!v.managed||!Object.values(v.attributes).includes('کوچک'))throw new Error('admin_qa_variation_create_mismatch');
-    phase='variation_edit';await variation.locator('input[name^="variable_regular_price"]').fill('345600');await variation.locator('input[name^="variable_stock["]').fill('5');
-    await page.locator('.save-variation-changes').click();await page.locator('.woocommerce_variations .blockUI').waitFor({state:'hidden'});await capture('variation-edited');
+    phase='variation_edit';if(!await variation.locator('input[name^="variable_regular_price"]').isVisible())await variation.locator('h3').click();await variation.locator('input[name^="variable_regular_price"]').fill('345600');await variation.locator('input[name^="variable_stock["]').fill('5');
+    await submitWooAction(page,'.save-variation-changes','woocommerce_save_variations');await page.locator('.woocommerce_variations .blockUI.blockOverlay').waitFor({state:'hidden'});await capture('variation-edited');
     const edited=await oracle('inspect');finalProduct=edited.product;
     if(Number(finalProduct?.variations?.[0]?.price)!==345600||finalProduct.variations[0].stock!==5)throw new Error('admin_qa_variation_edit_mismatch');
    });
@@ -127,6 +128,23 @@ export async function checkAdminProduct(environments:Environments,owner:string,e
     await page.waitForFunction("Number(document.querySelector('input[name=variation_id]')?.value)>0");
     if(Number(await page.locator('input[name="variation_id"]').inputValue())!==finalProduct.variations[0].id||!await page.locator('.single_add_to_cart_button').isEnabled())throw new Error('admin_qa_variation_storefront_mismatch');
     await capture('variation-storefront');
+    const missingOption=page.locator('form.variations_form select').first().locator('option').filter({hasText:/^بزرگ$/});
+    const unavailableOptionCount=await missingOption.count();
+    if(unavailableOptionCount&&await missingOption.isEnabled()){
+     await page.locator('form.variations_form select').first().selectOption({label:'بزرگ'});
+     await page.waitForFunction("Number(document.querySelector('input[name=variation_id]')?.value||0)===0");
+     const unavailable=page.locator('.single_add_to_cart_button');
+     if(await unavailable.isEnabled()){await unavailable.focus();await unavailable.press('Enter');}
+    }
+    await capture('unavailable-variation');
+    await page.goto(origin+'/cart/',{waitUntil:'load'});
+    if((await page.locator('main').innerText()).includes(updated))throw new Error('admin_qa_missing_variation_purchasable');
+    await capture('unavailable-variation-cart-empty');
+    await page.goto(finalProduct.url,{waitUntil:'load'});await page.locator('form.variations_form select').first().selectOption({label:'کوچک'});
+    await page.waitForFunction("Number(document.querySelector('input[name=variation_id]')?.value)>0");
+    await page.locator('.single_add_to_cart_button:not(.disabled)').click();await page.goto(origin+'/cart/',{waitUntil:'load'});
+    const cartText=await page.locator('main').innerText();if(!cartText.includes(updated)||!cartText.includes('کوچک'))throw new Error('admin_qa_variation_cart_mismatch');
+    await capture('purchasable-variation-cart');
    });
   }
   await stable();passed=true;
@@ -139,7 +157,8 @@ export async function checkAdminProduct(environments:Environments,owner:string,e
    if(!handle)continue;
    try{const stat=await handle.stat();if(!stat.isFile())continue;const bytes=Buffer.alloc(Math.min(stat.size,32768));await handle.read(bytes,0,bytes.length,Math.max(0,stat.size-bytes.length));let text=bytes.toString();for(const key of ['previewToken','adminPassword','dbPassword'])if(secret[key])text=text.replaceAll(secret[key],'[redacted]');logs[name]=text;}finally{await handle.close();}
   }
-  await artifacts.save('admin_qa_diagnostics','application/json',JSON.stringify({phase,reason,logs}));
+  let message=error instanceof Error?error.message.split('\n')[0]!.slice(0,600):'Unknown interaction error';for(const key of ['previewToken','adminPassword','dbPassword'])if(secret[key])message=message.replaceAll(secret[key],'[redacted]');
+  await artifacts.save('admin_qa_diagnostics','application/json',JSON.stringify({phase,reason,message,logs}));
  }
  finally{
   await browser.close();

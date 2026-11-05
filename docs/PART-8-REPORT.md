@@ -1,4 +1,10 @@
-# Part 8 — independent visual and responsive QA
+# Part 8 — completed independent visual QA implementation
+
+Accepted on 2026-11-05. The QA system detects/reports defects; the client prototype remains held for repairs. Complete review `fd89b69b-a83e-4071-bca5-e8395ea58742` covers all nine routes and the original 54 ordinary/stress captures plus 54 breakpoint samples. Eight confirmed route reviews were reused with immutable evidence remapping; the final route completed with 182,868 confirmed observed tokens. The result contains one major and 12 minor findings and correctly retains `requiresRepair: true` and `releaseEligible: false`.
+
+The real awkward-aspect-ratio defect benchmark, strict/semi-copy fidelity benchmark, isolation/queue/evidence tests and accepted-baseline regression tests provide the other Part 8 acceptance evidence. No actual prototype baseline was auto-approved. This complete assessment uses the original data snapshot (`freshPreviewObserved: false`); Part 10 must retest a fresh repaired candidate. Earlier failed runs below remain historical failures.
+
+## Historical Part 8 — independent visual and responsive QA
 
 Status: in progress. The implementation and controlled vision benchmarks work; the first retained-prototype run was held at its first vision route and the captured-route recovery was interrupted by provider HTTP 429. No website release or aesthetic pass is claimed.
 

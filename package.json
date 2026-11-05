@@ -70,7 +70,13 @@
     "test:functional-jobs": "tsx --test tests/controller/functional-jobs.test.ts",
     "test:accessibility-qa": "tsx --test tests/controller/accessibility-qa.test.ts",
     "test:browser-engines": "tsx --test tests/controller/browser-engines.test.ts",
-    "test:browser-upload": "tsx --test tests/controller/browser-upload.test.ts"
+    "test:browser-upload": "tsx --test tests/controller/browser-upload.test.ts",
+    "pilot:functional": "tsx tools/run_functional_pilot.ts",
+    "test:form-persistence": "tsx --test tests/controller/form-persistence.test.ts",
+    "test:admin-login": "tsx --test tests/controller/admin-login.test.ts",
+    "test:browser-response": "tsx --test tests/controller/browser-response.test.ts",
+    "test:keyboard-qa": "tsx --test tests/controller/keyboard-qa.test.ts",
+    "test:repair-policy": "tsx --test tests/controller/repair-policy.test.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

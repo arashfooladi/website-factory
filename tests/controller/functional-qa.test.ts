@@ -9,11 +9,12 @@ import {AgentArtifacts} from '../../src/agent-artifacts.js';
 import {checkFunctionalJourneys,type FunctionalCheck} from '../../src/functional-qa.js';
 
 test('functional checks distinguish real navigation/Persian search results from plausible broken pages',async()=>{
- let broken=false,post=false,posts=0;const root=await mkdtemp(join(tmpdir(),'factory-functional-'));
+ let broken=false,post=false,posts=0,redirect=false;const root=await mkdtemp(join(tmpdir(),'factory-functional-'));
  const server=createServer((request,response)=>{
   assert.equal(request.headers.authorization,'Bearer fixture');if(request.method==='POST')posts++;const url=new URL(request.url!,'http://fixture');
   response.setHeader('Content-Type','text/html; charset=utf-8');
-  const text=url.searchParams.has('s')?(broken||url.searchParams.get('s')==='دفتر سطر'?'دفتر سطر':'No products found'):url.pathname==='/shop/'?'Product catalog':'Home';
+  if(redirect&&url.searchParams.get('s')==='دفتر سطر'){response.writeHead(302,{Location:'/product/notebook/'});response.end();return;}
+  const text=url.pathname==='/product/notebook/'?'دفتر سطر':url.searchParams.has('s')?(broken||url.searchParams.get('s')==='دفتر سطر'?'دفتر سطر':'No products found'):url.pathname==='/shop/'?'Product catalog':'Home';
   response.end(`<html lang="fa"><a href="${broken?'/wrong/':'/shop/'}">Shop</a><form method="${post?'post':'get'}"><input name="s" type="search" aria-label="Search"></form><main>${text}</main></html>`);
  });await new Promise<void>(done=>server.listen(0,'127.0.0.1',done));
  const checks:FunctionalCheck[]=[{id:'nav',requirementId:'navigation',kind:'navigation',path:'/',linkText:'Shop',expectedPath:'/shop/',expectedText:'Product catalog'},
@@ -23,6 +24,7 @@ test('functional checks distinguish real navigation/Persian search results from 
  try{
   const artifacts=new AgentArtifacts(root,33554432),run=()=>checkFunctionalJourneys(input,artifacts,new AbortController().signal,{sourceDigest:async()=>input.sourceDigest});
   const healthy=await run();assert.equal(healthy.requiresRepair,false);assert(healthy.results.every(r=>r.passed&&r.before&&r.after));
+  redirect=true;const single=await checkFunctionalJourneys({...input,checks:[{...checks[1]!,kind:'search',query:'دفتر سطر',expectedPath:'/product/notebook/'}]},artifacts,new AbortController().signal,{sourceDigest:async()=>input.sourceDigest});assert.equal(single.requiresRepair,false);assert.equal(single.results[0]?.after?.path,'/product/notebook/');redirect=false;
   broken=true;const failed=await run();assert.equal(failed.requiresRepair,true);assert.deepEqual(failed.results.map(r=>r.reason),['functional_link_target_wrong',null,'functional_expected_content_missing']);
   assert(failed.results.every(r=>r.after&&artifacts.records.some(a=>a.id===r.after!.screenshot.id)));assert.equal(failed.releaseEligible,false);
   broken=false;post=true;const unsupported=await checkFunctionalJourneys({...input,checks:[checks[1]!] },artifacts,new AbortController().signal,{sourceDigest:async()=>input.sourceDigest});assert.equal(unsupported.results[0]!.reason,'functional_search_form_contract_wrong');assert.equal(posts,0);
@@ -48,5 +50,16 @@ test('filters, keyboard activation and persisted forms reject decorative control
   const denied=await checkFunctionalJourneys({...input,checks:[checks[2]!] },artifacts,AbortSignal.timeout(30000),{sourceDigest:async()=>input.sourceDigest});assert.equal(denied.results[0]?.reason,'functional_form_oracle_required');assert.equal(posts,0);
   const healthy=await run();assert.equal(healthy.requiresRepair,false,JSON.stringify(healthy.results.map(r=>({id:r.checkId,reason:r.reason}))));
   broken=true;submitted=false;const defects=await run();assert(defects.results.every(r=>!r.passed&&r.after));assert.equal(defects.results[2]?.reason,'functional_form_persistence_missing');
+ }finally{server.closeAllConnections();await new Promise<void>(done=>server.close(()=>done()));await rm(root,{recursive:true,force:true});}
+});
+
+test('mobile menu journeys require the actual controlled panel to open instead of falling through to a footer link',async()=>{
+ let broken=false;const root=await mkdtemp(join(tmpdir(),'factory-mobile-menu-'));
+ const server=createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(`<html lang="fa"><head><style>#mobile-nav{display:none}#mobile-nav.open{display:block}</style></head><body><header><button id="toggle" aria-controls="mobile-nav" aria-expanded="false">Menu</button><nav id="mobile-nav"><a href="/shop/">Shop</a></nav></header><main>${req.url==='/shop/'?'Catalog':'Home'}</main><footer><a href="/shop/">Shop</a></footer><script>document.querySelector('#toggle').onclick=function(){this.setAttribute('aria-expanded','true');${broken?'':"document.querySelector('#mobile-nav').classList.add('open')"}};</script></body></html>`);});
+ await new Promise<void>(done=>server.listen(0,'127.0.0.1',done));const input={origin:`http://127.0.0.1:${(server.address()as AddressInfo).port}`,token:'fixture',candidateRevision:'a'.repeat(40),sourceDigest:'b'.repeat(64),checks:[{id:'mobile',requirementId:'navigation',kind:'navigation' as const,path:'/',linkText:'Shop',menuToggle:'#toggle',viewport:{width:390,height:844},expectedPath:'/shop/',expectedText:'Catalog'}]};
+ try{
+  const run=()=>checkFunctionalJourneys(input,new AgentArtifacts(root,33554432),AbortSignal.timeout(60000),{sourceDigest:async()=>input.sourceDigest});
+  const healthy=await run();assert.equal(healthy.requiresRepair,false);assert.equal(healthy.results[0]?.after?.viewport.width,390);
+  broken=true;const defective=await run();assert.equal(defective.requiresRepair,true);assert.equal(defective.results[0]?.passed,false);assert(defective.results[0]?.after);
  }finally{server.closeAllConnections();await new Promise<void>(done=>server.close(()=>done()));await rm(root,{recursive:true,force:true});}
 });

@@ -6,11 +6,21 @@ if (!preg_match('/^factory-qa-[a-f0-9-]{36}$/D',$in['sku']??'')) throw new Runti
 $sku=$in['sku'];$email=$sku.'@example.test';$ids=array();
 foreach (array('','-unavailable') as $suffix) { $id=wc_get_product_id_by_sku($sku.$suffix);if($id)$ids[]=$id; }
 $orders=wc_get_orders(array('billing_email'=>$email,'limit'=>20));
+// Correlate by the scoped line item too: a broken checkout may persist an order without its expected email.
+$orderIds=array_map(function($o){return $o->get_id();},$orders);
+if($ids){
+ global $wpdb;
+ $placeholders=implode(',',array_fill(0,count($ids),'%d'));
+ $lineOrders=$wpdb->get_col($wpdb->prepare("SELECT DISTINCT i.order_id FROM {$wpdb->prefix}woocommerce_order_items i JOIN {$wpdb->prefix}woocommerce_order_itemmeta m ON m.order_item_id=i.order_item_id WHERE m.meta_key='_product_id' AND m.meta_value IN ($placeholders)",...$ids));
+ $orderIds=array_values(array_unique(array_merge($orderIds,array_map('intval',$lineOrders))));
+ $orders=array_values(array_filter(array_map('wc_get_order',$orderIds)));
+}
+
 $action=$in['action']??'';
 if ($action==='cleanup') {
  foreach($orders as $order)$order->delete(true);
  foreach($ids as $id){$p=wc_get_product($id);if($p)$p->delete(true);}
- echo wp_json_encode(array('removed'=>!wc_get_product_id_by_sku($sku)&&!wc_get_product_id_by_sku($sku.'-unavailable')&&!wc_get_orders(array('billing_email'=>$email,'limit'=>1))));return;
+ echo wp_json_encode(array('removed'=>!wc_get_product_id_by_sku($sku)&&!wc_get_product_id_by_sku($sku.'-unavailable')&&!wc_get_orders(array('billing_email'=>$email,'limit'=>1))&&!array_filter(array_map('wc_get_order',$orderIds))));return;
 }
 if ($action==='prepare') {
  if($ids||$orders)throw new RuntimeException('commerce_qa_scope_exists');
@@ -21,4 +31,4 @@ if ($action==='prepare') {
 } elseif($action!=='inspect')throw new RuntimeException('commerce_qa_action_invalid');
 $gateways=array();foreach(WC()->payment_gateways()->payment_gateways() as $key=>$gateway)if($gateway->enabled==='yes')$gateways[]=$key;
 echo wp_json_encode(array('email'=>$email,'gateways'=>$gateways,'products'=>array_map(function($id){$p=wc_get_product($id);return array('id'=>$id,'url'=>get_permalink($id),'stock'=>$p->get_stock_quantity(),'inStock'=>$p->is_in_stock());},$ids),
- 'orders'=>array_map(function($o){return array('id'=>$o->get_id(),'status'=>$o->get_status(),'payment'=>$o->get_payment_method(),'total'=>$o->get_total(),'shipping'=>$o->get_shipping_total(),'email'=>$o->get_billing_email(),'phone'=>$o->get_billing_phone(),'city'=>$o->get_billing_city(),'address'=>$o->get_billing_address_1(),'postcode'=>$o->get_billing_postcode(),'firstName'=>$o->get_billing_first_name(),'items'=>array_map(function($item){return array('productId'=>$item->get_product_id(),'quantity'=>$item->get_quantity(),'total'=>$item->get_total());},array_values($o->get_items())));},$orders)));
+ 'orders'=>array_map(function($o){return array('id'=>$o->get_id(),'editUrl'=>$o->get_edit_order_url(),'status'=>$o->get_status(),'payment'=>$o->get_payment_method(),'total'=>$o->get_total(),'shipping'=>$o->get_shipping_total(),'email'=>$o->get_billing_email(),'phone'=>$o->get_billing_phone(),'city'=>$o->get_billing_city(),'address'=>$o->get_billing_address_1(),'postcode'=>$o->get_billing_postcode(),'firstName'=>$o->get_billing_first_name(),'items'=>array_map(function($item){return array('productId'=>$item->get_product_id(),'quantity'=>$item->get_quantity(),'total'=>$item->get_total());},array_values($o->get_items())));},$orders)));

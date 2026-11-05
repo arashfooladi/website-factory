@@ -1,0 +1,130 @@
+{
+  "engines": [
+    "chromium",
+    "firefox"
+  ],
+  "journeys": [
+    {
+      "id": "navigation:catalog",
+      "requirementId": "page:/shop/",
+      "kind": "navigation",
+      "path": "/",
+      "linkText": "دیدن چاپ‌ها",
+      "expectedPath": "/shop/",
+      "expectedText": "چاپ‌ها"
+    },
+    {
+      "id": "search:positive",
+      "requirementId": "feature:search",
+      "kind": "search",
+      "path": "/",
+      "query": "آغاز",
+      "expectedText": "چاپ آغاز",
+      "expectedPath": "/product/aghaz/"
+    },
+    {
+      "id": "search:empty",
+      "requirementId": "feature:search",
+      "kind": "search",
+      "path": "/",
+      "query": "ناموجود-987654321",
+      "expectedText": "هیچ محصولی"
+    },
+    {
+      "id": "keyboard:catalog",
+      "requirementId": "baseline:keyboard-access",
+      "kind": "keyboard",
+      "path": "/",
+      "target": ".catalog-link",
+      "expectedPath": "/shop/",
+      "expectedText": "چاپ‌ها",
+      "maxTabs": 40
+    },
+    {
+      "id": "navigation:mobile-menu",
+      "requirementId": "page:/shop/",
+      "kind": "navigation",
+      "path": "/",
+      "linkText": "چاپ‌ها",
+      "menuToggle": ".menu-toggle",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "expectedPath": "/shop/",
+      "expectedText": "چاپ‌ها"
+    },
+    {
+      "id": "navigation:about",
+      "requirementId": "page:/about/",
+      "kind": "navigation",
+      "path": "/",
+      "linkText": "درباره سطر",
+      "expectedPath": "/about/",
+      "expectedText": "درباره سطر"
+    },
+    {
+      "id": "navigation:guide",
+      "requirementId": "page:/order-guide/",
+      "kind": "navigation",
+      "path": "/",
+      "linkText": "راهنمای سفارش",
+      "expectedPath": "/order-guide/",
+      "expectedText": "راهنمای سفارش"
+    },
+    {
+      "id": "navigation:account",
+      "requirementId": "page:/account/",
+      "kind": "navigation",
+      "path": "/",
+      "linkText": "حساب کاربری",
+      "expectedPath": "/account/",
+      "expectedText": "حساب کاربری"
+    },
+    {
+      "id": "navigation:cart",
+      "requirementId": "page:/cart/",
+      "kind": "navigation",
+      "path": "/",
+      "linkText": "سبد خرید",
+      "expectedPath": "/cart/",
+      "expectedText": "سبد خرید"
+    }
+  ],
+  "admin": {
+    "categories": true,
+    "media": true,
+    "variations": true
+  },
+  "accounts": {
+    "path": "/account/"
+  },
+  "commerce": {
+    "gateway": "cod",
+    "shipping": 50000,
+    "orderStatus": "processing",
+    "quantity": 2
+  },
+  "accessibility": [
+    "/",
+    "/shop/",
+    "/account/"
+  ],
+  "requiredChecks": [
+    "navigation:catalog",
+    "search:positive",
+    "search:empty",
+    "keyboard:catalog",
+    "admin:product-management",
+    "accounts:customer",
+    "commerce:checkout-orders",
+    "accessibility:automated",
+    "navigation:mobile-menu",
+    "navigation:about",
+    "navigation:guide",
+    "navigation:account",
+    "navigation:cart",
+    "baseline:wp-admin-access"
+  ],
+  "dashboard": true
+}

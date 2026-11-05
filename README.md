@@ -2,13 +2,13 @@
 
 A private server application that turns client briefs, reference URLs and assets into complete websites. Controlled AI workers inspect paired screenshots, rendered HTML/CSS/layout evidence and observed flows, then build primarily WordPress child themes on a pinned MainTheme version. Clients manage their products and orders in ordinary WordPress administration.
 
-**Current stage (2026-11-05): 7 of 15 milestones accepted; Parts 8 and 9 in progress; Parts 10–15 not started.** There is a working nine-route WordPress builder prototype, recovered and verified against 21 trusted preflight checks. Independent visual and full functional/admin/commerce QA are still being completed. This is not a release-certified or production-ready factory, and there is no portable client handoff yet.
+**Current stage (2026-11-05): 9 of 15 milestones accepted; Part 10 in progress; Parts 11–15 not started.** The nine-route WordPress prototype has independent visual and functional/admin/commerce QA evidence. The checkers detect real site defects; the prototype remains held for repair. Part 10 has a tested protected repair-decision core; automatic repair orchestration and final release gates remain to connect. There is no portable client handoff or production certification yet.
 
 Read **[the updated project and stage report](docs/STAGE-REPORT.md)** for what works, verification evidence, current failures and everything remaining. [The checkpoint guide](docs/CHECKPOINT.md) explains setup and resumption. The milestone count is not a percentage of remaining engineering time.
 
 Implemented customization includes [strict-copy/semi-copy/inspiration/custom modes and selectable design skills](docs/CUSTOMIZATION.md), the actual pinned [heydamir/unslop](https://github.com/heydamir/unslop) UI skill, Impeccable/frontend-design packs, per-page preferences and an [immutable MainTheme update library](docs/THEME-UPDATES.md). Codex is the implemented provider; Claude/DeepSeek and Next.js remain future profiles.
 
-Recent code adds accepted visual-baseline comparisons, resumable confirmed route reviews, product/category/image administration, filter/form/keyboard fixtures, automated accessibility, a durable functional QA API and an isolated Firefox bridge. Native variation/commerce acceptance and WebKit verification remain open. See [functional QA scope and API](docs/FUNCTIONAL-QA.md).
+Recent code adds accepted visual-baseline comparisons, resumable confirmed route reviews, product/category/image administration, filter/form/keyboard fixtures, automated accessibility, a durable functional QA API and an isolated Firefox bridge. Native COD commerce passes Chromium/Firefox, customer account checks pass, and denied product permissions are caught. Variable-product checks now pass; full aggregate acceptance remains in progress; WebKit is blocked by missing host libraries. See [functional QA scope and API](docs/FUNCTIONAL-QA.md).
 
 - [Numbered build order](docs/BUILD-ORDER.md)
 - [Progress and verification](docs/PROGRESS.md)

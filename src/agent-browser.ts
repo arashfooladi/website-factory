@@ -10,6 +10,7 @@ import { BrowserAction,type ExperienceObservation } from './agent-contracts.js';
 
 const exec=promisify(execFile);
 const blockedHeaders=new Set(['host','connection','content-length','transfer-encoding','accept-encoding','authorization']);
+export interface ProtectedNetworkResponse {url:string;method:string;status:number;body:Buffer}
 export interface BrowserNetwork {
   permits(url:URL):boolean;
   fetch(url:string,method:string,headers:Record<string,string>,signal:AbortSignal,resourceType?:string):Promise<Response>;
@@ -22,6 +23,7 @@ interface BridgeResource {
   fulfill:(response:{status:number;headers:Record<string,string>;body:Buffer})=>Promise<void>;
 }
 export class AgentBrowser {
+  private responseObservers=new Set<{match:(response:ProtectedNetworkResponse)=>boolean;resolve:(response:ProtectedNetworkResponse)=>void;reject:(error:Error)=>void}>();
   private browser?:Browser;
   private engineClose?:()=>Promise<void>;
   private context?:BrowserContext;
@@ -43,6 +45,19 @@ export class AgentBrowser {
   protectedPage<T>(work:(page:Page)=>Promise<T>):Promise<T>{
     const result=this.serial.then(async()=>{this.check();if(!this.page)throw new Error('browser_not_open');return work(this.page);});
     this.serial=result.catch(()=>{});return result;
+  }
+  // Trusted suites only. Receipts are copied before delivery, so a client redirect cannot evict them.
+  async protectedNetworkResponse(match:(response:ProtectedNetworkResponse)=>boolean,action:()=>Promise<unknown>,timeoutMs=30000):Promise<ProtectedNetworkResponse>{
+    this.check();let observer!:typeof this.responseObservers extends Set<infer T>?T:never;
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const aborted=()=>observer.reject(new Error('browser_cancelled'));
+    const receipt=new Promise<ProtectedNetworkResponse>((resolve,reject)=>{
+      observer={match,resolve,reject};this.responseObservers.add(observer);
+      timer=setTimeout(()=>reject(new Error('browser_response_timeout')),timeoutMs);
+      this.signal.addEventListener('abort',aborted,{once:true});if(this.signal.aborted)aborted();
+    });
+    try{const [response]=await Promise.all([receipt,Promise.resolve().then(action)]);return response;}
+    finally{clearTimeout(timer);this.signal.removeEventListener('abort',aborted);this.responseObservers.delete(observer);}
   }
   readonly id=randomUUID();
   readonly network:Array<{path:string;status:number;blocked?:boolean;reason?:string}>=[];
@@ -162,7 +177,12 @@ export class AgentBrowser {
       for(const [key,value]of response.headers)if(!['content-encoding','content-length','transfer-encoding','connection','set-cookie'].includes(key))output[key]=value;
       const cookies=response.headers.getSetCookie();if(cookies.length)output['set-cookie']=cookies.join('\n');
       this.network.push({path:url.pathname,status:response.status});
-      await request.fulfill({status:response.status,headers:output,body:Buffer.concat(chunks)});
+      const body=Buffer.concat(chunks);
+      for(const observer of [...this.responseObservers]){
+        try{const receipt={url:request.url,method:request.method,status:response.status,body:Buffer.from(body)};if(observer.match(receipt)){this.responseObservers.delete(observer);observer.resolve(receipt);}}
+        catch(error){this.responseObservers.delete(observer);observer.reject(error instanceof Error?error:new Error('browser_response_observer_failed'));}
+      }
+      await request.fulfill({status:response.status,headers:output,body});
     }catch{if(mainNavigation){this.mainStatus=0;this.blockedNavigations++;}
       this.network.push({path:url.pathname,status:0,blocked:true,reason:this.signal.aborted?'browser_aborted':'browser_resource_failed'});
       await request.abort('failed').catch(()=>{});
@@ -233,6 +253,7 @@ export class AgentBrowser {
       screenshot,html:source,structure:geometry,summary};
   }
   async close(){
+    for(const observer of this.responseObservers)observer.reject(new Error('browser_closed'));this.responseObservers.clear();
     this.signal.removeEventListener('abort',this.aborted);
     await this.context?.close().catch(()=>{});await this.browser?.close().catch(()=>{});
     await this.engineClose?.();this.engineClose=undefined;

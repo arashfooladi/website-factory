@@ -1,0 +1,7 @@
+{
+  "engines": ["chromium", "firefox"],
+  "dashboard": true,
+  "accounts": {"path": "/account/"},
+  "commerce": {"gateway": "cod", "shipping": 50000, "orderStatus": "processing", "quantity": 2},
+  "requiredChecks": ["baseline:wp-admin-access", "accounts:customer", "commerce:checkout-orders"]
+}

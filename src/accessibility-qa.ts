@@ -12,12 +12,13 @@ export async function checkAccessibility(input:{origin:string;token:string;candi
   try{
    await browser.open(viewport);const analysis=await browser.protectedPage(async page=>{
     await page.goto(input.origin+path,{waitUntil:'load'});evidence=await browser.capture();if(browser.httpStatus!==200)throw new Error('accessibility_qa_http_failure');
+    if(new URL(page.url()).origin!==input.origin||new URL(page.url()).pathname!==path)throw new Error('accessibility_qa_redirected_route');
     return new AxeBuilder({page}).setLegacyMode().withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze();
    });
    results.push({path,viewport,passed:analysis.violations.length===0&&analysis.incomplete.length===0,violations:analysis.violations,incomplete:analysis.incomplete,evidence,reason:null});
   }catch(error){evidence??=await browser.capture().catch(()=>null);results.push({path,viewport,passed:false,violations:[],incomplete:[],evidence,reason:error instanceof Error&&/^accessibility_qa_[a-z_]+$/.test(error.message)?error.message:'accessibility_qa_execution_failed'});}
   finally{await browser.close();}await stable();
  }}
- const report={candidateRevision:input.candidateRevision,sourceDigest:input.sourceDigest,requirementId:'accessibility:automated',results,requiresReview:results.some(r=>!r.passed),releaseEligible:false,scope:'Automated WCAG A/AA checks at desktop/mobile sizes. Incomplete rules require review; keyboard and human assistive-technology assessment are separate.'};
+ const report={candidateRevision:input.candidateRevision,sourceDigest:input.sourceDigest,requirementId:'accessibility:automated',results,coverageComplete:results.every(r=>!r.reason&&r.incomplete.length===0),requiresRepair:results.some(r=>r.violations.length>0),requiresReview:results.some(r=>!r.passed),releaseEligible:false,scope:'Automated WCAG A/AA checks at desktop/mobile sizes. Incomplete rules require review; keyboard and human assistive-technology assessment are separate.'};
  await artifacts.save('accessibility_report','application/json',JSON.stringify(report));return report;
 }
